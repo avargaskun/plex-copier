@@ -1,0 +1,9 @@
+collection: D:\Antonio\Media\Videos\Anime\Series
+tvDb:
+  apiKey: --INSERT_HERE--
+  userKey: --INSERT_HERE--
+  userName: --INSERT_HERE--
+series:
+  - id: 12345
+    patterns:
+      - expression: .*Example_Series - ([0-9]{2}).*
