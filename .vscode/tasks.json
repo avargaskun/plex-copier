@@ -10,6 +10,18 @@
                 "${workspaceFolder}/plex-copier.sln"
             ],
             "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "publish",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "publish",
+                "${workspaceFolder}/plex-copier.sln",
+                "-c",
+                "Release"
+            ],
+            "problemMatcher": "$msCompile"
         }
     ]
 }
