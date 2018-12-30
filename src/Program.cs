@@ -6,29 +6,59 @@ using System.Linq;
 using PlexCopier.Settings;
 using PlexCopier.TvDb;
 
+[assembly: log4net.Config.XmlConfigurator(ConfigFile = "log4net.config")]
+
 namespace PlexCopier
 {
     public class Program
     {
+        private static readonly log4net.ILog Log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
         public static void Main(string[] args)
         {
-            var arguments = Arguments.Parse(args);
-
-            Options options;
-            if (!string.IsNullOrEmpty(arguments.Options))
+            try
             {
-                options = Options.Load(arguments.Options);
+                var arguments = Arguments.Parse(args);
+                if (arguments == null)
+                {
+                    return;
+                }
+
+                Options options;
+                if (!string.IsNullOrEmpty(arguments.Options))
+                {
+                    options = Options.Load(arguments.Options);
+                }
+                else
+                {
+                    options = LoadOptions(arguments.Target);
+                }
+
+                var client = new TvDbClient(options.TvDb.ApiKey, options.TvDb.UserKey, options.TvDb.UserName);
+                client.Login().Wait();
+
+                var copier = new Copier(arguments, client, options);
+                copier.CopyFiles().Wait();
             }
-            else
+            catch (FatalException fe)
             {
-                options = LoadOptions(arguments.Target);
+                Log.Error(fe.Message);
             }
-
-            var client = new TvDbClient(options.TvDb.ApiKey, options.TvDb.UserKey, options.TvDb.UserName);
-            client.Login().Wait();
-
-            var copier = new Copier(arguments, client, options);
-            copier.CopyFiles().Wait();
+            catch (AggregateException ae)
+            {
+                if (ae.InnerException is FatalException)
+                {
+                    Log.Error(ae.InnerException.Message);
+                }
+                else
+                {
+                    Log.Error(ae);
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error(e);
+            }
         }
 
         static Options LoadOptions(string target)
@@ -39,6 +69,7 @@ namespace PlexCopier
                 string optionsFile = Path.Combine(parent.FullName, Options.DefaultFilename);
                 if (File.Exists(optionsFile))
                 {
+                    Log.Info($"Loading options from: {optionsFile}");
                     return Options.Load(optionsFile);
                 }
                 else
@@ -47,7 +78,14 @@ namespace PlexCopier
                 }
             }
 
-            throw new Exception($"File {Options.DefaultFilename} could not be found for {target}");
+            string defaultFile = Path.Combine(AppContext.BaseDirectory, Options.DefaultFilename);
+            if (File.Exists(defaultFile))
+            {
+                Log.Info($"Loading options from: {defaultFile}");
+                return Options.Load(defaultFile);
+            }
+
+            throw new FatalException($"File {Options.DefaultFilename} could not be found for {target}");
         }
     }
 }

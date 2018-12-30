@@ -9,7 +9,7 @@ namespace tst
     {
         public static string DefaultCollection => Path.Combine(Environment.CurrentDirectory, "test-collection");
 
-        public static Options AllSeries
+        public static Options Default
         {
             get
             {

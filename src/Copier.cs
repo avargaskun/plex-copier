@@ -11,6 +11,8 @@ namespace PlexCopier
 {
     public class Copier
     {
+        private static readonly log4net.ILog Log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
         private Arguments arguments;
 
         private ITvDbClient client;
@@ -44,7 +46,7 @@ namespace PlexCopier
 
             if (!Directory.Exists(directory))
             {
-                Console.WriteLine($"Creating directory {directory}");
+                Log.Info($"Creating directory {directory}");
                 if (!this.arguments.Test)
                 {
                     Directory.CreateDirectory(directory);
@@ -56,11 +58,11 @@ namespace PlexCopier
             {
                 if (!match.Series.ReplaceExisting)
                 {
-                    Console.WriteLine($"Skipping existing file {target}");
+                    Log.Warn($"Skipping existing file {target}");
                 }
                 else
                 {
-                    Console.WriteLine($"Deleting existing file {target}");
+                    Log.Warn($"Deleting existing file {target}");
                     if (!this.arguments.Test)
                     {
                         File.Delete(target);
@@ -70,7 +72,7 @@ namespace PlexCopier
 
             if (match.Series.MoveFiles)
             {
-                Console.WriteLine($"Moving file: {source} -> {target}");
+                Log.Info($"Moving file: {source} -> {target}");
                 if (!this.arguments.Test)
                 {
                     File.Move(source, target);
@@ -78,7 +80,7 @@ namespace PlexCopier
             }
             else
             {
-                Console.WriteLine($"Copying file: {source} -> {target}");
+                Log.Info($"Copying file: {source} -> {target}");
                 if (!this.arguments.Test)
                 {
                     File.Copy(source, target);
@@ -119,6 +121,10 @@ namespace PlexCopier
             if (File.Exists(target))
             {
                 yield return target;
+            }
+            else if (!Directory.Exists(target))
+            {
+                throw new FatalException($"Target does not exist: {target}");
             }
             else if (!this.arguments.Recursive)
             {

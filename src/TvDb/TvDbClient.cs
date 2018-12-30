@@ -48,7 +48,7 @@ namespace PlexCopier.TvDb
             var token = response?["token"];
             if (token == null || token.Type != JTokenType.String)
             {
-                throw new Exception("Missing or invalid token in login response");
+                throw new FatalException("Missing or invalid token in login response");
             }
 
             this.token = token.Value<string>();
@@ -65,7 +65,7 @@ namespace PlexCopier.TvDb
             var seriesName = response?["data"]?["seriesName"];
             if (seriesName == null || seriesName.Type != JTokenType.String)
             {
-                throw new Exception("Missing or invalid series information");
+                throw new FatalException("Missing or invalid series information");
             }
 
             response = null;
@@ -76,7 +76,7 @@ namespace PlexCopier.TvDb
                 var episodes = response?["data"];
                 if (episodes == null || episodes.Type != JTokenType.Array)
                 {
-                    throw new Exception("Missing or invalid episodes information");
+                    throw new FatalException("Missing or invalid episodes information");
                 }
 
                 foreach (var episode in episodes)
@@ -84,7 +84,7 @@ namespace PlexCopier.TvDb
                     var season = episode["airedSeason"];
                     if (season == null || season.Type != JTokenType.Integer)
                     {
-                        throw new Exception("Missing or invalid season number");
+                        throw new FatalException("Missing or invalid season number");
                     }
 
                     var seasonInt = season.Value<int>();

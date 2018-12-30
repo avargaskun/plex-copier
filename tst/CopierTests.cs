@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 
 using PlexCopier;
+using PlexCopier.TvDb;
 using Xunit;
 
 namespace tst
@@ -26,7 +27,7 @@ namespace tst
         public void TestAllFiles()
         {
             var arguments = TestArguments.Default;
-            var options = TestOptions.AllSeries;
+            var options = TestOptions.Default;
             var client = new TestClient();
 
             TestFiles.CreateFiles(TestArguments.DefaultTarget, TestFiles.SingleSeries, TestFiles.DoubleSeries, TestFiles.LongSeries);
@@ -35,6 +36,25 @@ namespace tst
             copier.CopyFiles().Wait();
 
             ValidateFiles(options.Collection, OutputFiles.SingleSeries, OutputFiles.DoubleSeries, OutputFiles.LongSeries);
+        }
+
+        [Fact]
+        public void TestSingleFileDoesNotMatch()
+        {
+            var arguments = TestArguments.Default;
+            arguments.Target = Path.Combine(TestArguments.DefaultTarget, TestFiles.SingleSeries[0]);
+
+            var options = TestOptions.Default;
+            options.Series = new[] { TestOptions.LongSeries };
+
+            var client = new TestClient();
+
+            TestFiles.CreateFiles(TestArguments.DefaultTarget, TestFiles.SingleSeries);
+
+            var copier = new Copier(arguments, client, options);
+            copier.CopyFiles().Wait();
+
+            ValidateFiles(options.Collection);
         }
 
         private static void ValidateFiles(string root, params string[][] multipleTargets)
