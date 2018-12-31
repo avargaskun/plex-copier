@@ -9,17 +9,11 @@ namespace tst
     {
         public static string DefaultCollection => Path.Combine(Environment.CurrentDirectory, "test-collection");
 
-        public static Options Default
+        public static Options Default => new Options
         {
-            get
-            {
-                return new Options
-                {
-                    Collection = DefaultCollection,
-                    Series = new[] { SingleSeries, DoubleSeries, LongSeries }
-                };
-            }
-        }
+            Collection = DefaultCollection,
+            Series = new[] { SingleSeries, DoubleSeries, LongSeries }
+        };
 
         public static Series SingleSeries => new Series
         {

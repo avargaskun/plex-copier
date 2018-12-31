@@ -59,6 +59,7 @@ namespace PlexCopier
                 if (!match.Series.ReplaceExisting)
                 {
                     Log.Warn($"Skipping existing file {target}");
+                    return;
                 }
                 else
                 {

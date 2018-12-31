@@ -57,6 +57,53 @@ namespace tst
             ValidateFiles(options.Collection);
         }
 
+        [Fact]
+        public void ExistingFileDoesNotGetReplaced()
+        {
+            var arguments = TestArguments.Default;
+            var options = TestOptions.Default;
+            var client = new TestClient();
+
+            TestFiles.CreateFiles(TestArguments.DefaultTarget, TestFiles.SingleSeries);
+            
+            var outputFile = Path.Combine(TestOptions.DefaultCollection, OutputFiles.SingleSeries[0]);
+            var initialContents = TestFiles.CreateFile(outputFile);
+
+            var copier = new Copier(arguments, client, options);
+            copier.CopyFiles().Wait();
+
+            ValidateFiles(options.Collection, OutputFiles.SingleSeries);
+
+            var finalContents = File.ReadAllText(outputFile);
+            Assert.Equal(initialContents, finalContents);
+        }
+
+        [Fact]
+        public void ExistingFileDoesGetReplaced()
+        {
+            var arguments = TestArguments.Default;
+            var options = TestOptions.Default;
+            var client = new TestClient();
+
+            foreach(var series in options.Series)
+            {
+                series.ReplaceExisting = true;
+            }
+
+            TestFiles.CreateFiles(TestArguments.DefaultTarget, TestFiles.SingleSeries);
+            
+            var outputFile = Path.Combine(TestOptions.DefaultCollection, OutputFiles.SingleSeries[0]);
+            var initialContents = TestFiles.CreateFile(outputFile);
+
+            var copier = new Copier(arguments, client, options);
+            copier.CopyFiles().Wait();
+
+            ValidateFiles(options.Collection, OutputFiles.SingleSeries);
+
+            var finalContents = File.ReadAllText(outputFile);
+            Assert.NotEqual(initialContents, finalContents);
+        }
+
         private static void ValidateFiles(string root, params string[][] multipleTargets)
         {
             Assert.True(Directory.Exists(root), $"Root directory does not exist: {root}");

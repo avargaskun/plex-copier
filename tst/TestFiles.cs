@@ -42,8 +42,7 @@ namespace tst
                 foreach (var target in targets)
                 {
                     var file = Path.Combine(root, target);
-                    var contents = Path.GetFileNameWithoutExtension(file);
-                    CreateFile(file, contents);
+                    CreateFile(file);
                 }
             }
 
@@ -55,7 +54,7 @@ namespace tst
             }
         }
 
-        private static void CreateFile(string target, string contents)
+        public static string CreateFile(string target)
         {
             var directory = Directory.GetParent(target).FullName;
             if (!Directory.Exists(directory))
@@ -63,7 +62,10 @@ namespace tst
                 Directory.CreateDirectory(directory);
             }
 
+            var contents = Guid.NewGuid().ToString();
             File.WriteAllText(target, contents);
+
+            return contents;
         }
     }
 }
