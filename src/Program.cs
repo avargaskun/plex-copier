@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 
+using log4net.Config;
 using PlexCopier.Settings;
 using PlexCopier.TvDb;
-
-[assembly: log4net.Config.XmlConfigurator(ConfigFile = "log4net.config")]
 
 namespace PlexCopier
 {
@@ -14,10 +14,17 @@ namespace PlexCopier
     {
         private static readonly log4net.ILog Log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
+        private const string LogConfigFile = "log4net.config";
+
         public static void Main(string[] args)
         {
+            ConfigureLog();
+
             try
             {
+                Log.Debug($"New run with command line: {Environment.CommandLine}");
+                Log.Debug($"Current directory: {Environment.CurrentDirectory}");
+
                 var arguments = Arguments.Parse(args);
                 if (arguments == null)
                 {
@@ -31,7 +38,7 @@ namespace PlexCopier
                 }
                 else
                 {
-                    options = LoadOptions(arguments.Target);
+                    options = LoadOptions();
                 }
 
                 var client = new TvDbClient(options.TvDb.ApiKey, options.TvDb.UserKey, options.TvDb.UserName);
@@ -61,31 +68,47 @@ namespace PlexCopier
             }
         }
 
-        static Options LoadOptions(string target)
+        static Options LoadOptions()
         {
-            var parent = Directory.GetParent(target);
-            while (parent != null)
+            var file = FindFile(Options.DefaultFilename);
+            if (file == null)
             {
-                string optionsFile = Path.Combine(parent.FullName, Options.DefaultFilename);
-                if (File.Exists(optionsFile))
+                throw new FatalException($"File {Options.DefaultFilename} could not be found.");
+            }
+
+            return Options.Load(file);
+        }
+
+        static void ConfigureLog()
+        {
+            var logRepository = log4net.LogManager.GetRepository(Assembly.GetEntryAssembly());
+            var config = FindFile(LogConfigFile);
+            if (config != null)
+            {
+                XmlConfigurator.Configure(logRepository, new FileInfo(config));                
+            }
+            else
+            {
+                BasicConfigurator.Configure(logRepository, new log4net.Appender.ConsoleAppender());
+            }
+        }
+
+        static string FindFile(string file)
+        {
+            if (File.Exists(file))
+            {
+                return file;
+            }
+            else
+            {
+                file = Path.Combine(AppContext.BaseDirectory, file);
+                if (File.Exists(file))
                 {
-                    Log.Info($"Loading options from: {optionsFile}");
-                    return Options.Load(optionsFile);
-                }
-                else
-                {
-                    parent = parent.Parent;
+                    return file;
                 }
             }
 
-            string defaultFile = Path.Combine(AppContext.BaseDirectory, Options.DefaultFilename);
-            if (File.Exists(defaultFile))
-            {
-                Log.Info($"Loading options from: {defaultFile}");
-                return Options.Load(defaultFile);
-            }
-
-            throw new FatalException($"File {Options.DefaultFilename} could not be found for {target}");
+            return null;
         }
     }
 }
