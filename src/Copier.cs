@@ -56,7 +56,7 @@ namespace PlexCopier
             var target = Path.Combine(directory, file);
             if (File.Exists(target))
             {
-                if (!match.Series.ReplaceExisting)
+                if (!match.ReplaceExisting)
                 {
                     Log.Warn($"Skipping existing file {target}");
                     return;
@@ -71,7 +71,7 @@ namespace PlexCopier
                 }
             }
 
-            if (match.Series.MoveFiles)
+            if (match.MoveFiles)
             {
                 Log.Info($"Moving file: {source} -> {target}");
                 if (!this.arguments.Test)
@@ -108,7 +108,7 @@ namespace PlexCopier
                             season++;
                         }
 
-                        return new SeriesMatch(series, seriesInfo, season, episode);
+                        return new SeriesMatch(series, pattern, seriesInfo, season, episode);
                     }                
                 }
             }
@@ -156,18 +156,60 @@ namespace PlexCopier
         private class SeriesMatch
         {
             public Series Series { get; set; }
+
+            public Pattern Pattern { get; set; }
+
             public SeriesInfo Info { get; set; }
 
             public int Season { get; set; }
 
             public int Episode { get; set; }
 
-            public SeriesMatch(Series series, SeriesInfo info, int season, int episode)
+            public SeriesMatch(Series series, Pattern pattern, SeriesInfo info, int season, int episode)
             {
                 this.Series = series;
+                this.Pattern = pattern;
                 this.Info = info;
                 this.Season = season;
                 this.Episode = episode;
+            }
+
+            public bool MoveFiles
+            {
+                get
+                {
+                    if (this.Pattern.MoveFiles.HasValue)
+                    {
+                        return this.Pattern.MoveFiles.Value;
+                    }
+                    else if (this.Series.MoveFiles.HasValue)
+                    {
+                        return this.Series.MoveFiles.Value;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            public bool ReplaceExisting
+            {
+                get
+                {
+                    if (this.Pattern.ReplaceExisting.HasValue)
+                    {
+                        return this.Pattern.ReplaceExisting.Value;
+                    }
+                    else if (this.Series.ReplaceExisting.HasValue)
+                    {
+                        return this.Series.ReplaceExisting.Value;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
             }
         }
     }

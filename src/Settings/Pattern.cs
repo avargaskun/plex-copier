@@ -13,6 +13,10 @@ namespace PlexCopier.Settings
 
         public int? EpisodeOffset { get; set; }
 
+        public bool? MoveFiles { get; set; }
+
+        public bool? ReplaceExisting { get; set; }
+
         public Regex Regex
         {
             get

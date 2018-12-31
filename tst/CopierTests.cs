@@ -57,29 +57,20 @@ namespace tst
             ValidateFiles(options.Collection);
         }
 
-        [Fact]
-        public void ExistingFileDoesNotGetReplaced()
-        {
-            var arguments = TestArguments.Default;
-            var options = TestOptions.Default;
-            var client = new TestClient();
-
-            TestFiles.CreateFiles(TestArguments.DefaultTarget, TestFiles.SingleSeries);
-            
-            var outputFile = Path.Combine(TestOptions.DefaultCollection, OutputFiles.SingleSeries[0]);
-            var initialContents = TestFiles.CreateFile(outputFile);
-
-            var copier = new Copier(arguments, client, options);
-            copier.CopyFiles().Wait();
-
-            ValidateFiles(options.Collection, OutputFiles.SingleSeries);
-
-            var finalContents = File.ReadAllText(outputFile);
-            Assert.Equal(initialContents, finalContents);
-        }
-
-        [Fact]
-        public void ExistingFileDoesGetReplaced()
+        [Theory]
+        [InlineData(null, null, false)]
+        [InlineData(null, false, false)]
+        [InlineData(false, null, false)]
+        [InlineData(false, false, false)]
+        [InlineData(null, true, true)]
+        [InlineData(true, null, true)]
+        [InlineData(true, true, true)]
+        [InlineData(true, false, false)]
+        [InlineData(false, true, true)]
+        private void TestWhetherFileIsReplacedBasedOnSeriesOptions(
+            bool? SeriesReplaceExisting,
+            bool? PatternReplaceExisting,
+            bool shouldBeReplaced)
         {
             var arguments = TestArguments.Default;
             var options = TestOptions.Default;
@@ -87,7 +78,11 @@ namespace tst
 
             foreach(var series in options.Series)
             {
-                series.ReplaceExisting = true;
+                series.ReplaceExisting = SeriesReplaceExisting;
+                foreach (var pattern in series.Patterns)
+                {
+                    pattern.ReplaceExisting = PatternReplaceExisting;
+                }
             }
 
             TestFiles.CreateFiles(TestArguments.DefaultTarget, TestFiles.SingleSeries);
@@ -101,7 +96,14 @@ namespace tst
             ValidateFiles(options.Collection, OutputFiles.SingleSeries);
 
             var finalContents = File.ReadAllText(outputFile);
-            Assert.NotEqual(initialContents, finalContents);
+            if (!shouldBeReplaced)
+            {
+                Assert.Equal(initialContents, finalContents);
+            }
+            else
+            {
+                Assert.NotEqual(initialContents, finalContents);
+            }
         }
 
         private static void ValidateFiles(string root, params string[][] multipleTargets)
