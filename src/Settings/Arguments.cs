@@ -25,6 +25,11 @@ namespace PlexCopier.Settings
                 .ParseArguments<Arguments>(args)
                 .WithParsed(parsed => result = parsed);
             
+            if (result == null)
+            {
+                throw new FatalException("Failed to parse command line arguments");
+            }
+            
             return result;
         }
     }
