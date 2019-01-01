@@ -14,7 +14,7 @@ namespace tst
 
         public const int LongSeriesId = 3;
 
-        private static readonly Dictionary<int, SeriesInfo> SeriesInfos = new Dictionary<int, SeriesInfo>
+        private Dictionary<int, SeriesInfo> seriesInfos = new Dictionary<int, SeriesInfo>
         {
             {
                 SingleSeriesId, 
@@ -52,6 +52,8 @@ namespace tst
                 }
             },
         };
+
+        public Dictionary<int, SeriesInfo> SeriesInfos => this.seriesInfos;
 
         public Task<SeriesInfo> GetSeriesInfo(int seriesId)
         {

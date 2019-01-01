@@ -62,6 +62,49 @@ namespace tst
         }
 
         [Theory]
+        // Baseline test without special characters
+        [InlineData("Single Series")]
+        // Test each individual character separately
+        [InlineData("Single < Series")]
+        [InlineData("Single > Series")]
+        [InlineData("Single : Series")]
+        [InlineData("Single \" Series")]
+        [InlineData("Single ' Series")]
+        [InlineData("Single / Series")]
+        [InlineData("Single \\ Series")]
+        [InlineData("Single | Series")]
+        [InlineData("Single ? Series")]
+        [InlineData("Single * Series")]
+        // Test multiple invalid characters
+        [InlineData("Single <>:\"'/\\|?* Series")]
+        // Test with different character placement regarding spaces
+        [InlineData("Single! Series")]
+        [InlineData("Single !Series")]
+        [InlineData("Single ! Series")]
+        [InlineData("Single ! ! Series")]
+        public void TestInvalidPathCharactersAreRemoved(string seriesName)
+        {
+            var arguments = TestArguments.Default;
+            arguments.Target = Path.Combine(TestArguments.DefaultTarget, TestFiles.SingleSeries[0]);
+
+            var options = TestOptions.Default;
+            options.Series = new[] { TestOptions.SingleSeries };
+
+            var client = new TestClient();
+            client.SeriesInfos[TestClient.SingleSeriesId].Name = seriesName;
+
+            TestFiles.CreateFiles(TestArguments.DefaultTarget, TestFiles.SingleSeries);
+
+            var copier = new Copier(arguments, client, options);
+            var matches = copier.CopyFiles().Result;
+
+            Assert.Equal(1, matches);
+
+            var outputFile = Path.Combine(TestOptions.DefaultCollection, OutputFiles.SingleSeries[0]);
+            Assert.True(File.Exists(outputFile));
+        }
+
+        [Theory]
         [InlineData(null, null, false)]
         [InlineData(null, false, false)]
         [InlineData(false, null, false)]

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 using PlexCopier.Settings;
@@ -12,6 +13,8 @@ namespace PlexCopier
     public class Copier
     {
         private static readonly log4net.ILog Log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
+        private static readonly string InvalidPathCharacters = @"<>:\\/""'!\|\?\*";
 
         private Arguments arguments;
 
@@ -44,7 +47,8 @@ namespace PlexCopier
 
         private void CopyFile(string source, SeriesMatch match)
         {
-            var seriesName = match.Info.Name.Replace(":", " ");
+            var seriesName = Regex.Replace(match.Info.Name, $"( *[{InvalidPathCharacters}]+ *)+", " ");
+
             var file = $"{seriesName} - s{match.Season:D2}e{match.Episode:D2}{Path.GetExtension(source)}";
             var directory = Path.Combine(this.options.Collection, seriesName, $"Season {match.Season:D2}");
 
