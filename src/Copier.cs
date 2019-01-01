@@ -26,16 +26,20 @@ namespace PlexCopier
             this.options = options;
         }
 
-        public async Task CopyFiles()
+        public async Task<int> CopyFiles()
         {
+            int matches = 0;
             foreach (var file in FindTargetFiles())
             {
                 var match = await this.FindSeriesForFile(file);
                 if (match != null)
                 {
+                    matches++;
                     this.CopyFile(file, match);
                 }
             }
+
+            return matches;
         }
 
         private void CopyFile(string source, SeriesMatch match)

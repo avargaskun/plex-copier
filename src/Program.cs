@@ -28,7 +28,12 @@ namespace PlexCopier
                     client.Login().Wait();
 
                     var copier = new Copier(arguments, client, options);
-                    copier.CopyFiles().Wait();
+                    int matches = copier.CopyFiles().Result;
+
+                    if (matches == 0)
+                    {
+                        Log.Warn($"No matches were found!");
+                    }
                 }
                 catch (FatalException fe)
                 {

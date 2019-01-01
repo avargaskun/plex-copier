@@ -33,7 +33,9 @@ namespace tst
             TestFiles.CreateFiles(TestArguments.DefaultTarget, TestFiles.SingleSeries, TestFiles.DoubleSeries, TestFiles.LongSeries);
 
             var copier = new Copier(arguments, client, options);
-            copier.CopyFiles().Wait();
+            var matches = copier.CopyFiles().Result;
+
+            Assert.Equal(TestFiles.SingleSeries.Length + TestFiles.DoubleSeries.Length + TestFiles.LongSeries.Length, matches);
 
             ValidateFiles(options.Collection, OutputFiles.SingleSeries, OutputFiles.DoubleSeries, OutputFiles.LongSeries);
         }
@@ -52,7 +54,9 @@ namespace tst
             TestFiles.CreateFiles(TestArguments.DefaultTarget, TestFiles.SingleSeries);
 
             var copier = new Copier(arguments, client, options);
-            copier.CopyFiles().Wait();
+            var matches = copier.CopyFiles().Result;
+
+            Assert.Equal(0, matches);
 
             ValidateFiles(options.Collection);
         }
@@ -91,7 +95,9 @@ namespace tst
             var initialContents = TestFiles.CreateFile(outputFile);
 
             var copier = new Copier(arguments, client, options);
-            copier.CopyFiles().Wait();
+            var matches = copier.CopyFiles().Result;
+
+            Assert.Equal(TestFiles.SingleSeries.Length, matches);
 
             ValidateFiles(options.Collection, OutputFiles.SingleSeries);
 
