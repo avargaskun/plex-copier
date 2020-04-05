@@ -61,6 +61,27 @@ namespace tst
             ValidateFiles(options.Collection);
         }
 
+        [Fact]
+        public void TestMovieFile()
+        {
+            var arguments = TestArguments.Default;
+
+            var options = TestOptions.Default;
+            options.Series = new[] { TestOptions.MovieSpecial };
+
+            var client = new TestClient();
+
+            TestFiles.CreateFiles(TestArguments.DefaultTarget, TestFiles.SeriesWithSpecials);
+
+            var copier = new Copier(arguments, client, options);
+            var matches = copier.CopyFiles().Result;
+
+            Assert.Equal(1, matches);
+
+            var outputFile = Path.Combine(TestOptions.DefaultCollection, OutputFiles.SingleMovie[0]);
+            Assert.True(File.Exists(outputFile));
+        }
+
         [Theory]
         // Baseline test without special characters
         [InlineData("Single Series")]
@@ -221,6 +242,10 @@ namespace tst
                 Path.Combine("Long Series", "Season 02", "Long Series - s02e01.mp4"),
                 Path.Combine("Long Series", "Season 02", "Long Series - s02e02.mp4"),
                 Path.Combine("Long Series", "Season 02", "Long Series - s02e03.mp4")
+            };
+            public static readonly string[] SingleMovie = new[]
+            {
+                Path.Combine("Series With Specials", "Season 00", "Series With Specials - s00e05.mkv")
             };
         }
     }

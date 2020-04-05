@@ -35,6 +35,19 @@ namespace tst
             Path.Combine("Long_Series", "[TEST] Long - 06.mp4"),
         };
 
+        public static readonly string[] SeriesWithSpecials = new[]
+        {
+            Path.Combine("Series_With_Specials", "Season-00", "[TEST] Specials - 01.mkv"),
+            Path.Combine("Series_With_Specials", "Season-00", "[TEST] Specials - 02.mkv"),
+            Path.Combine("Series_With_Specials", "Season-00", "[TEST] Specials - 03.mkv"),
+            Path.Combine("Series_With_Specials", "Season-00", "[TEST] Specials - 04.mkv"),
+            Path.Combine("Series_With_Specials", "Season-00", "[TEST] Specials - Movie.mkv"),
+
+            Path.Combine("Series_With_Specials", "Season-01", "[TEST] Single S1 - 01.mkv"),
+            Path.Combine("Series_With_Specials", "Season-01", "[TEST] Single S1 - 02.mkv"),
+            Path.Combine("Series_With_Specials", "Season-01", "[TEST] Single S1 - 03.mkv"),
+        };
+
         public static void CreateFiles(string root, params string[][] multipleTargets)
         {
             foreach (var targets in multipleTargets)

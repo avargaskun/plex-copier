@@ -108,7 +108,7 @@ namespace PlexCopier
                     {
                         var seriesInfo = await this.client.GetSeriesInfo(series.Id);
                         var season = pattern.SeasonStart.GetValueOrDefault(1);
-                        var episode = int.Parse(match.Groups[1].Value);
+                        var episode = match.Groups.Count > 1 ? int.Parse(match.Groups[1].Value) : 1;
                         episode += pattern.EpisodeOffset.GetValueOrDefault(0);
                         while (episode > seriesInfo.Seasons[season].EpisodeCount && seriesInfo.Seasons.Length > season + 1)
                         {

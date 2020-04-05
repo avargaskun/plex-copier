@@ -15,6 +15,20 @@ namespace tst
             Series = new[] { SingleSeries, DoubleSeries, LongSeries }
         };
 
+        public static Series MovieSpecial => new Series
+        {
+            Id = TestClient.SeriesWithSpecials,
+            Patterns = new[]
+            {
+                new Pattern
+                {
+                    Expression = ".*Specials - Movie.*",
+                    SeasonStart = 0,
+                    EpisodeOffset = 4
+                }
+            }
+        };
+
         public static Series SingleSeries => new Series
         {
             Id = TestClient.SingleSeriesId,

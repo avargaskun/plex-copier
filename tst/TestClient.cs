@@ -14,6 +14,8 @@ namespace tst
 
         public const int LongSeriesId = 3;
 
+        public const int SeriesWithSpecials = 4;
+
         private Dictionary<int, SeriesInfo> seriesInfos = new Dictionary<int, SeriesInfo>
         {
             {
@@ -51,6 +53,17 @@ namespace tst
                     }
                 }
             },
+            {
+                SeriesWithSpecials,
+                new SeriesInfo
+                {
+                    Name = "Series With Specials",
+                    Seasons = new[] {
+                        new SeasonInfo { EpisodeCount = 5 },
+                        new SeasonInfo { EpisodeCount = 3 }
+                    }
+                }
+            }
         };
 
         public Dictionary<int, SeriesInfo> SeriesInfos => this.seriesInfos;
