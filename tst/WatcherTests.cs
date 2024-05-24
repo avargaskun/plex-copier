@@ -1,24 +1,27 @@
 using NSubstitute;
+using NUnit.Framework;
 using PlexCopier;
-using Xunit;
 
 namespace tst
 {
-    public class WatcherTests : IDisposable
+    [TestFixture]
+    public class WatcherTests
     {
-        public WatcherTests()
+        [SetUp]
+        public void BeforeTest()
         {
             Cleanup();
             Directory.CreateDirectory(TestArguments.DefaultTarget);
             Directory.CreateDirectory(TestOptions.DefaultCollection);
         }
 
-        public void Dispose()
+        [TearDown]
+        public void AfterTest()
         {
             Cleanup();
         }
 
-        [Fact]
+        [Test]
         public async Task FileIsDetectedAfterWritingToRootFolder()
         {
             var arguments = TestArguments.Default;
@@ -38,7 +41,7 @@ namespace tst
             await WaitHelper.WaitUntil(() => !watcher.IsRunning, message: "Waiting for starter to end");
         }
 
-        [Fact]
+        [Test]
         public async Task FileIsDetectedAfterWritingToSubFolderWhenRecursive()
         {
             var arguments = TestArguments.Default;
@@ -58,7 +61,7 @@ namespace tst
             await WaitHelper.WaitUntil(() => !watcher.IsRunning, message: "Waiting for starter to end");
         }
 
-        [Fact]
+        [Test]
         public async Task FileIsNotDetectedAfterWritingToSubFolderWhenNotRecursive()
         {
             var arguments = TestArguments.Default with { Recursive = false };
@@ -79,7 +82,7 @@ namespace tst
             await WaitHelper.WaitUntil(() => !watcher.IsRunning, message: "Waiting for starter to end");
         }
 
-        [Fact]
+        [Test]
         public async Task MultipleFilesDetectedAfterWritingToSubFolder()
         {
             var arguments = TestArguments.Default;

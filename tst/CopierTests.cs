@@ -1,25 +1,27 @@
+using NUnit.Framework;
 using PlexCopier;
-using Xunit;
-
-[assembly: CollectionBehavior(DisableTestParallelization = true)]
 
 namespace tst
 {
-    public class CopierTests : IDisposable
+
+    [TestFixture]
+    public class CopierTests
     {
-        public CopierTests()
+        [SetUp]
+        public void BeforeTest()
         {
             Cleanup();
             Directory.CreateDirectory(TestArguments.DefaultTarget);
             Directory.CreateDirectory(TestOptions.DefaultCollection);
         }
 
-        public void Dispose()
+        [TearDown]
+        public void AfterTest()
         {
             Cleanup();
         }
 
-        [Fact]
+        [Test]
         public async Task TestAllFiles()
         {
             var arguments = TestArguments.Default;
@@ -31,12 +33,12 @@ namespace tst
             var copier = new Copier(arguments, client, options);
             var matches = await copier.CopyFiles();
 
-            Assert.Equal(TestFiles.SingleSeries.Length + TestFiles.DoubleSeries.Length + TestFiles.LongSeries.Length, matches);
+            Assert.That(matches, Is.EqualTo(TestFiles.SingleSeries.Length + TestFiles.DoubleSeries.Length + TestFiles.LongSeries.Length));
 
             ValidateFiles(options.Collection, OutputFiles.SingleSeries, OutputFiles.DoubleSeries, OutputFiles.LongSeries);
         }
 
-        [Fact]
+        [Test]
         public async Task TestSingleFileDoesNotMatch()
         {
             var arguments = TestArguments.Default;
@@ -52,12 +54,12 @@ namespace tst
             var copier = new Copier(arguments, client, options);
             var matches = await copier.CopyFiles();
 
-            Assert.Equal(0, matches);
+            Assert.That(matches, Is.Zero);
 
             ValidateFiles(options.Collection);
         }
 
-        [Fact]
+        [Test]
         public async Task TestMovieFile()
         {
             var arguments = TestArguments.Default;
@@ -72,33 +74,33 @@ namespace tst
             var copier = new Copier(arguments, client, options);
             var matches = await copier.CopyFiles();
 
-            Assert.Equal(1, matches);
+            Assert.That(matches, Is.EqualTo(1));
 
             var outputFile = Path.Combine(TestOptions.DefaultCollection, OutputFiles.SingleMovie[0]);
-            Assert.True(File.Exists(outputFile));
+            Assert.That(File.Exists(outputFile));
         }
 
-        [Theory]
+        [Test]
         // Baseline test without special characters
-        [InlineData("Single Series")]
+        [TestCase("Single Series")]
         // Test each individual character separately
-        [InlineData("Single < Series")]
-        [InlineData("Single > Series")]
-        [InlineData("Single : Series")]
-        [InlineData("Single \" Series")]
-        [InlineData("Single ' Series")]
-        [InlineData("Single / Series")]
-        [InlineData("Single \\ Series")]
-        [InlineData("Single | Series")]
-        [InlineData("Single ? Series")]
-        [InlineData("Single * Series")]
+        [TestCase("Single < Series")]
+        [TestCase("Single > Series")]
+        [TestCase("Single : Series")]
+        [TestCase("Single \" Series")]
+        [TestCase("Single ' Series")]
+        [TestCase("Single / Series")]
+        [TestCase("Single \\ Series")]
+        [TestCase("Single | Series")]
+        [TestCase("Single ? Series")]
+        [TestCase("Single * Series")]
         // Test multiple invalid characters
-        [InlineData("Single <>:\"'/\\|?* Series")]
+        [TestCase("Single <>:\"'/\\|?* Series")]
         // Test with different character placement regarding spaces
-        [InlineData("Single! Series")]
-        [InlineData("Single !Series")]
-        [InlineData("Single ! Series")]
-        [InlineData("Single ! ! Series")]
+        [TestCase("Single! Series")]
+        [TestCase("Single !Series")]
+        [TestCase("Single ! Series")]
+        [TestCase("Single ! ! Series")]
         public async Task TestInvalidPathCharactersAreRemoved(string seriesName)
         {
             var arguments = TestArguments.Default;
@@ -115,22 +117,22 @@ namespace tst
             var copier = new Copier(arguments, client, options);
             var matches = await copier.CopyFiles();
 
-            Assert.Equal(1, matches);
+            Assert.That(matches, Is.EqualTo(1));
 
             var outputFile = Path.Combine(TestOptions.DefaultCollection, OutputFiles.SingleSeries[0]);
-            Assert.True(File.Exists(outputFile));
+            Assert.That(File.Exists(outputFile));
         }
 
-        [Theory]
-        [InlineData(null, null, false)]
-        [InlineData(null, false, false)]
-        [InlineData(false, null, false)]
-        [InlineData(false, false, false)]
-        [InlineData(null, true, true)]
-        [InlineData(true, null, true)]
-        [InlineData(true, true, true)]
-        [InlineData(true, false, false)]
-        [InlineData(false, true, true)]
+        [Test]
+        [TestCase(null, null, false)]
+        [TestCase(null, false, false)]
+        [TestCase(false, null, false)]
+        [TestCase(false, false, false)]
+        [TestCase(null, true, true)]
+        [TestCase(true, null, true)]
+        [TestCase(true, true, true)]
+        [TestCase(true, false, false)]
+        [TestCase(false, true, true)]
         public async Task TestWhetherFileIsReplacedBasedOnSeriesOptions(
             bool? SeriesReplaceExisting,
             bool? PatternReplaceExisting,
@@ -157,24 +159,24 @@ namespace tst
             var copier = new Copier(arguments, client, options);
             var matches = await copier.CopyFiles();
 
-            Assert.Equal(TestFiles.SingleSeries.Length, matches);
+            Assert.That(matches, Is.EqualTo(TestFiles.SingleSeries.Length));
 
             ValidateFiles(options.Collection, OutputFiles.SingleSeries);
 
             var finalContents = File.ReadAllText(outputFile);
             if (!shouldBeReplaced)
             {
-                Assert.Equal(initialContents, finalContents);
+                Assert.That(finalContents, Is.EqualTo(initialContents));
             }
             else
             {
-                Assert.NotEqual(initialContents, finalContents);
+                Assert.That(finalContents, Is.Not.EqualTo(initialContents));
             }
         }
 
         private static void ValidateFiles(string root, params string[][] multipleTargets)
         {
-            Assert.True(Directory.Exists(root), $"Root directory does not exist: {root}");
+            Assert.That(Directory.Exists(root), $"Root directory does not exist: {root}");
 
             var allFiles = Directory.EnumerateFiles(root, "*.*", SearchOption.AllDirectories);
             foreach (var file in allFiles.Select(f => f.Substring(root.Length)))
@@ -189,13 +191,13 @@ namespace tst
                 {
                     var file = Path.Combine(root, target);
                     allTargets.Add(file);
-                    Assert.True(File.Exists(file), $"Could not find file {file}");
+                    Assert.That(File.Exists(file), $"Could not find file {file}");
                 }
             }
 
             foreach (var file in allFiles)
             {
-                Assert.Contains(file, allTargets);
+                Assert.That(allTargets, Contains.Item(file));
             }
         }
 
