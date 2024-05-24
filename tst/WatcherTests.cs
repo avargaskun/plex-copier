@@ -39,7 +39,7 @@ namespace tst
         }
 
         [Fact]
-        public async Task FileIsDetectedAfterWritingToSubFolder()
+        public async Task FileIsDetectedAfterWritingToSubFolderWhenRecursive()
         {
             var arguments = TestArguments.Default;
             var copier = Substitute.For<ICopier>();
@@ -53,6 +53,27 @@ namespace tst
             
             var fullPath = Path.GetFullPath(testFile);
             await WaitHelper.TryUntil(() => copier.Received().CopyFiles(Path.GetDirectoryName(fullPath)));
+
+            watcher.Stop();
+            await WaitHelper.WaitUntil(() => !watcher.IsRunning, message: "Waiting for starter to end");
+        }
+
+        [Fact]
+        public async Task FileIsNotDetectedAfterWritingToSubFolderWhenNotRecursive()
+        {
+            var arguments = TestArguments.Default with { Recursive = false };
+            var copier = Substitute.For<ICopier>();
+            
+            using var watcher = new Watcher(arguments, copier);
+            _ = Task.Run(watcher.Start);
+            await WaitHelper.WaitUntil(() => watcher.IsRunning, message: "Waiting for watcher to start");
+
+            var testFile = Path.Combine(TestArguments.DefaultTarget, "TestFolder", $"{Guid.NewGuid()}.mp4");
+            TestFiles.CreateFile(testFile);
+
+            await Task.Delay(1000);
+
+            await copier.DidNotReceiveWithAnyArgs().CopyFiles(default);
 
             watcher.Stop();
             await WaitHelper.WaitUntil(() => !watcher.IsRunning, message: "Waiting for starter to end");

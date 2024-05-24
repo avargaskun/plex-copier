@@ -2,10 +2,10 @@ using CommandLine;
 
 namespace PlexCopier.Settings
 {
-    public class Arguments
+    public record Arguments
     {
         [Option('i', "ignore", Required = false, HelpText = "One or more paths to ignore when watching for file changes")]
-        public string[]? IgnorePaths { get; set; }
+        public required IEnumerable<string> IgnorePaths { get; set; }
 
         [Option('o', "options", Required = false, HelpText = "Path to configuration file")]
         public string? Options { get; set; }

@@ -13,15 +13,9 @@
         },
         {
             "label": "publish",
-            "command": "dotnet",
-            "type": "process",
-            "args": [
-                "publish",
-                "${workspaceFolder}/plex-copier.sln",
-                "-c",
-                "Release"
-            ],
-            "problemMatcher": "$msCompile"
+            "command": "${workspaceFolder}/publish.sh",
+            "type": "shell",
+            "problemMatcher": []
         }
     ]
 }

@@ -13,7 +13,8 @@ namespace tst
             Target = DefaultTarget,
             Recursive = true,
             Test = false,
-            Options = DefaultOptions
+            Options = DefaultOptions,
+            IgnorePaths = [],
         };
     }
 }

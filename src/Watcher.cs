@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using PlexCopier.Settings;
 
 namespace PlexCopier
@@ -12,6 +13,8 @@ namespace PlexCopier
 
         private readonly ICopier copier;
 
+        private readonly bool isLinux;
+
         private List<FileSystemWatcher> watchers;
 
         private HashSet<string> watchedFolders;
@@ -25,6 +28,7 @@ namespace PlexCopier
 
             this.arguments = arguments;
             this.copier = copier;
+            isLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
             stopped = new AutoResetEvent(false);
             watchers = [];
             watchedFolders = [];
@@ -68,7 +72,7 @@ namespace PlexCopier
             }
             else
             {
-                Log.Warn("The file logger is not running");
+                Log.Debug("The file logger is not running");
             }
         }
 
@@ -80,11 +84,15 @@ namespace PlexCopier
                 {
                     Log.Info($"Ignoring event for path that is filtered explicitly: {args.FullPath}");
                 }
-                else if (Directory.Exists(args.FullPath))
+                else if (Directory.Exists(args.FullPath) && arguments.Recursive && isLinux)
                 {
                     SetupWatcherFor(args.FullPath);
+                    copier.CopyFiles(args.FullPath);
                 }
-                copier.CopyFiles(args.FullPath);
+                else if (File.Exists(args.FullPath))
+                {
+                    copier.CopyFiles(args.FullPath);
+                }
             }
             catch (Exception ex)
             {
@@ -107,7 +115,7 @@ namespace PlexCopier
                 if (!watchedFolders.Contains(fullPath)) {
                     var watcher = new FileSystemWatcher(fullPath)
                     {
-                        IncludeSubdirectories = true,
+                        IncludeSubdirectories = arguments.Recursive,
                         EnableRaisingEvents = true,
                     };
                     watcher.Created += OnCreated;

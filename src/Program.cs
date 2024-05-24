@@ -23,11 +23,20 @@ namespace PlexCopier
                     client.Login().Wait();
 
                     var copier = new Copier(arguments, client, options);
-                    int matches = copier.CopyFiles().Result;
 
-                    if (matches == 0)
+                    if (arguments.Watch)
                     {
-                        Log.Warn($"No matches were found!");
+                        var watcher = new Watcher(arguments, copier);
+                        Console.CancelKeyPress += (sender, args) =>
+                        {
+                            args.Cancel = true;
+                            watcher.Stop();
+                        };
+                        watcher.Start();
+                    }
+                    else
+                    {
+                        copier.CopyFiles().Wait();
                     }
                 }
                 catch (FatalException fe)
