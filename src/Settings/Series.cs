@@ -1,5 +1,3 @@
-using System;
-
 namespace PlexCopier.Settings
 {
     public class Series
@@ -10,6 +8,6 @@ namespace PlexCopier.Settings
 
         public bool? ReplaceExisting { get; set; }
 
-        public Pattern[] Patterns { get; set; }
+        public required Pattern[] Patterns { get; set; }
     }
 }

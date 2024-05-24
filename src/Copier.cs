@@ -1,18 +1,13 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 using PlexCopier.Settings;
 using PlexCopier.TvDb;
 
 namespace PlexCopier
 {
-    public class Copier
+    public class Copier : ICopier
     {
-        private static readonly log4net.ILog Log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private static readonly log4net.ILog Log = log4net.LogManager.GetLogger(typeof(Copier));
 
         private static readonly string InvalidPathCharacters = @"<>:\\/""'!\|\?\*";
 
@@ -29,20 +24,31 @@ namespace PlexCopier
             this.options = options;
         }
 
-        public async Task<int> CopyFiles()
+        public async Task<int> CopyFiles(string? source = null)
         {
             int matches = 0;
-            foreach (var file in FindTargetFiles())
+            foreach (var file in FindTargetFiles(source ?? arguments.Target))
             {
-                var match = await this.FindSeriesForFile(file);
-                if (match != null)
+                if (await CopyFile(file))
                 {
                     matches++;
-                    this.CopyFile(file, match);
                 }
             }
 
             return matches;
+        }
+
+        private async Task<bool> CopyFile(string source)
+        {
+            var match = await FindSeriesForFile(source);
+            if (match != null)
+            {
+                CopyFile(source, match);
+                return true;
+            }
+
+            Log.Warn($"A match could not be found for file {source}");
+            return false;
         }
 
         private void CopyFile(string source, SeriesMatch match)
@@ -50,12 +56,12 @@ namespace PlexCopier
             var seriesName = Regex.Replace(match.Info.Name, $"( *[{InvalidPathCharacters}]+ *)+", " ");
 
             var file = $"{seriesName} - s{match.Season:D2}e{match.Episode:D2}{Path.GetExtension(source)}";
-            var directory = Path.Combine(this.options.Collection, seriesName, $"Season {match.Season:D2}");
+            var directory = Path.Combine(options.Collection, seriesName, $"Season {match.Season:D2}");
 
             if (!Directory.Exists(directory))
             {
                 Log.Info($"Creating directory {directory}");
-                if (!this.arguments.Test)
+                if (!arguments.Test)
                 {
                     Directory.CreateDirectory(directory);
                 }
@@ -72,7 +78,7 @@ namespace PlexCopier
                 else
                 {
                     Log.Warn($"Deleting existing file {target}");
-                    if (!this.arguments.Test)
+                    if (!arguments.Test)
                     {
                         File.Delete(target);
                     }
@@ -82,7 +88,7 @@ namespace PlexCopier
             if (match.MoveFiles)
             {
                 Log.Info($"Moving file: {source} -> {target}");
-                if (!this.arguments.Test)
+                if (!arguments.Test)
                 {
                     File.Move(source, target);
                 }
@@ -90,23 +96,23 @@ namespace PlexCopier
             else
             {
                 Log.Info($"Copying file: {source} -> {target}");
-                if (!this.arguments.Test)
+                if (!arguments.Test)
                 {
                     File.Copy(source, target);
                 }
             }
         }
 
-        private async Task<SeriesMatch> FindSeriesForFile(string file)
+        private async Task<SeriesMatch?> FindSeriesForFile(string file)
         {
-            foreach (var series in this.options.Series)
+            foreach (var series in options.Series)
             {
                 foreach (var pattern in series.Patterns)
                 {
                     var match = pattern.Regex.Match(Path.GetFileNameWithoutExtension(file));
                     if (match.Success)
                     {
-                        var seriesInfo = await this.client.GetSeriesInfo(series.Id);
+                        var seriesInfo = await client.GetSeriesInfo(series.Id);
                         var season = pattern.SeasonStart.GetValueOrDefault(1);
                         var episode = match.Groups.Count > 1 ? int.Parse(match.Groups[1].Value) : 1;
                         episode += pattern.EpisodeOffset.GetValueOrDefault(0);
@@ -124,20 +130,19 @@ namespace PlexCopier
             return null;
         }
 
-        private IEnumerable<string> FindTargetFiles()
+        private IEnumerable<string> FindTargetFiles(string source)
         {
-            string target = this.arguments.Target;
-            if (File.Exists(target))
+            if (File.Exists(source))
             {
-                yield return target;
+                yield return source;
             }
-            else if (!Directory.Exists(target))
+            else if (!Directory.Exists(source))
             {
-                throw new FatalException($"Target does not exist: {target}");
+                throw new FatalException($"Target does not exist: {source}");
             }
-            else if (!this.arguments.Recursive)
+            else if (!arguments.Recursive)
             {
-                foreach (var file in Directory.GetFiles(target).OrderBy(f => f))
+                foreach (var file in Directory.GetFiles(source).OrderBy(f => f))
                 {
                     yield return file;
                 }
@@ -145,15 +150,15 @@ namespace PlexCopier
             else
             {
                 var stack = new Stack<string>();
-                stack.Push(target);
+                stack.Push(source);
                 while (stack.Count > 0)
                 {
-                    target = stack.Pop();
-                    foreach (var directory in Directory.GetDirectories(target).OrderBy(d => d))
+                    source = stack.Pop();
+                    foreach (var directory in Directory.GetDirectories(source).OrderBy(d => d))
                     {
                         stack.Push(directory);
                     }
-                    foreach (var file in Directory.GetFiles(target).OrderBy(f => f))
+                    foreach (var file in Directory.GetFiles(source).OrderBy(f => f))
                     {
                         yield return file;
                     }
@@ -175,24 +180,24 @@ namespace PlexCopier
 
             public SeriesMatch(Series series, Pattern pattern, SeriesInfo info, int season, int episode)
             {
-                this.Series = series;
-                this.Pattern = pattern;
-                this.Info = info;
-                this.Season = season;
-                this.Episode = episode;
+                Series = series;
+                Pattern = pattern;
+                Info = info;
+                Season = season;
+                Episode = episode;
             }
 
             public bool MoveFiles
             {
                 get
                 {
-                    if (this.Pattern.MoveFiles.HasValue)
+                    if (Pattern.MoveFiles.HasValue)
                     {
-                        return this.Pattern.MoveFiles.Value;
+                        return Pattern.MoveFiles.Value;
                     }
-                    else if (this.Series.MoveFiles.HasValue)
+                    else if (Series.MoveFiles.HasValue)
                     {
-                        return this.Series.MoveFiles.Value;
+                        return Series.MoveFiles.Value;
                     }
                     else
                     {
@@ -205,13 +210,13 @@ namespace PlexCopier
             {
                 get
                 {
-                    if (this.Pattern.ReplaceExisting.HasValue)
+                    if (Pattern.ReplaceExisting.HasValue)
                     {
-                        return this.Pattern.ReplaceExisting.Value;
+                        return Pattern.ReplaceExisting.Value;
                     }
-                    else if (this.Series.ReplaceExisting.HasValue)
+                    else if (Series.ReplaceExisting.HasValue)
                     {
-                        return this.Series.ReplaceExisting.Value;
+                        return Series.ReplaceExisting.Value;
                     }
                     else
                     {

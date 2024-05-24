@@ -1,8 +1,6 @@
 collection: D:\Antonio\Media\Videos\Anime\Series
 tvDb:
   apiKey: --INSERT_HERE--
-  userKey: --INSERT_HERE--
-  userName: --INSERT_HERE--
 series:
   - id: 12345
     patterns:

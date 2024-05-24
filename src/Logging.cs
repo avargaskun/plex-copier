@@ -1,6 +1,3 @@
-using System;
-using System.IO;
-using System.Linq;
 using System.Reflection;
 
 using log4net;
@@ -16,9 +13,9 @@ namespace PlexCopier
 
         private ILoggerRepository repository;
 
-        public LoggingScope(string configFile)
+        public LoggingScope(string? configFile)
         {
-            this.repository = LogManager.GetRepository(Assembly.GetEntryAssembly());
+            repository = LogManager.GetRepository(Assembly.GetEntryAssembly());
             if (configFile != null && File.Exists(configFile))
             {
                 XmlConfigurator.Configure(repository, new FileInfo(configFile));                
@@ -31,9 +28,9 @@ namespace PlexCopier
 
         public void Dispose()
         {
-            var files = this.repository.GetAppenders().OfType<FileAppender>().Select(a => a.File).Where(f => f != null).ToList();
+            var files = repository.GetAppenders().OfType<FileAppender>().Select(a => a.File).Where(f => f != null).ToList();
 
-            this.repository.Shutdown();
+            repository.Shutdown();
 
             // For each appender of type FileAppender delete any generated empty files
             foreach (var file in files)

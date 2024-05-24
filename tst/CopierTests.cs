@@ -1,11 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-
 using PlexCopier;
-using PlexCopier.TvDb;
 using Xunit;
+
+[assembly: CollectionBehavior(DisableTestParallelization = true)]
 
 namespace tst
 {
@@ -24,7 +20,7 @@ namespace tst
         }
 
         [Fact]
-        public void TestAllFiles()
+        public async Task TestAllFiles()
         {
             var arguments = TestArguments.Default;
             var options = TestOptions.Default;
@@ -33,7 +29,7 @@ namespace tst
             TestFiles.CreateFiles(TestArguments.DefaultTarget, TestFiles.SingleSeries, TestFiles.DoubleSeries, TestFiles.LongSeries);
 
             var copier = new Copier(arguments, client, options);
-            var matches = copier.CopyFiles().Result;
+            var matches = await copier.CopyFiles();
 
             Assert.Equal(TestFiles.SingleSeries.Length + TestFiles.DoubleSeries.Length + TestFiles.LongSeries.Length, matches);
 
@@ -41,20 +37,20 @@ namespace tst
         }
 
         [Fact]
-        public void TestSingleFileDoesNotMatch()
+        public async Task TestSingleFileDoesNotMatch()
         {
             var arguments = TestArguments.Default;
             arguments.Target = Path.Combine(TestArguments.DefaultTarget, TestFiles.SingleSeries[0]);
 
             var options = TestOptions.Default;
-            options.Series = new[] { TestOptions.LongSeries };
+            options.Series = [TestOptions.LongSeries];
 
             var client = new TestClient();
 
             TestFiles.CreateFiles(TestArguments.DefaultTarget, TestFiles.SingleSeries);
 
             var copier = new Copier(arguments, client, options);
-            var matches = copier.CopyFiles().Result;
+            var matches = await copier.CopyFiles();
 
             Assert.Equal(0, matches);
 
@@ -62,19 +58,19 @@ namespace tst
         }
 
         [Fact]
-        public void TestMovieFile()
+        public async Task TestMovieFile()
         {
             var arguments = TestArguments.Default;
 
             var options = TestOptions.Default;
-            options.Series = new[] { TestOptions.MovieSpecial };
+            options.Series = [TestOptions.MovieSpecial];
 
             var client = new TestClient();
 
             TestFiles.CreateFiles(TestArguments.DefaultTarget, TestFiles.SeriesWithSpecials);
 
             var copier = new Copier(arguments, client, options);
-            var matches = copier.CopyFiles().Result;
+            var matches = await copier.CopyFiles();
 
             Assert.Equal(1, matches);
 
@@ -103,13 +99,13 @@ namespace tst
         [InlineData("Single !Series")]
         [InlineData("Single ! Series")]
         [InlineData("Single ! ! Series")]
-        public void TestInvalidPathCharactersAreRemoved(string seriesName)
+        public async Task TestInvalidPathCharactersAreRemoved(string seriesName)
         {
             var arguments = TestArguments.Default;
             arguments.Target = Path.Combine(TestArguments.DefaultTarget, TestFiles.SingleSeries[0]);
 
             var options = TestOptions.Default;
-            options.Series = new[] { TestOptions.SingleSeries };
+            options.Series = [TestOptions.SingleSeries];
 
             var client = new TestClient();
             client.SeriesInfos[TestClient.SingleSeriesId].Name = seriesName;
@@ -117,7 +113,7 @@ namespace tst
             TestFiles.CreateFiles(TestArguments.DefaultTarget, TestFiles.SingleSeries);
 
             var copier = new Copier(arguments, client, options);
-            var matches = copier.CopyFiles().Result;
+            var matches = await copier.CopyFiles();
 
             Assert.Equal(1, matches);
 
@@ -135,7 +131,7 @@ namespace tst
         [InlineData(true, true, true)]
         [InlineData(true, false, false)]
         [InlineData(false, true, true)]
-        private void TestWhetherFileIsReplacedBasedOnSeriesOptions(
+        public async Task TestWhetherFileIsReplacedBasedOnSeriesOptions(
             bool? SeriesReplaceExisting,
             bool? PatternReplaceExisting,
             bool shouldBeReplaced)
@@ -159,7 +155,7 @@ namespace tst
             var initialContents = TestFiles.CreateFile(outputFile);
 
             var copier = new Copier(arguments, client, options);
-            var matches = copier.CopyFiles().Result;
+            var matches = await copier.CopyFiles();
 
             Assert.Equal(TestFiles.SingleSeries.Length, matches);
 
@@ -181,7 +177,6 @@ namespace tst
             Assert.True(Directory.Exists(root), $"Root directory does not exist: {root}");
 
             var allFiles = Directory.EnumerateFiles(root, "*.*", SearchOption.AllDirectories);
-            Console.WriteLine($"Existing files under {root}:");
             foreach (var file in allFiles.Select(f => f.Substring(root.Length)))
             {
                 Console.WriteLine($"\t{file}");
@@ -219,34 +214,34 @@ namespace tst
 
         private static class OutputFiles
         {
-            public static readonly string[] SingleSeries = new[]
-            {
+            public static readonly string[] SingleSeries =
+            [
                 Path.Combine("Single Series", "Season 01", "Single Series - s01e01.mkv"),
                 Path.Combine("Single Series", "Season 01", "Single Series - s01e02.mkv"),
                 Path.Combine("Single Series", "Season 01", "Single Series - s01e03.mkv")
-            };
-            public static readonly string[] DoubleSeries = new[]
-            {
+            ];
+            public static readonly string[] DoubleSeries =
+            [
                 Path.Combine("Double Series", "Season 01", "Double Series - s01e01.mkv"),
                 Path.Combine("Double Series", "Season 01", "Double Series - s01e02.mkv"),
                 Path.Combine("Double Series", "Season 01", "Double Series - s01e03.mkv"),
                 Path.Combine("Double Series", "Season 02", "Double Series - s02e01.mkv"),
                 Path.Combine("Double Series", "Season 02", "Double Series - s02e02.mkv"),
                 Path.Combine("Double Series", "Season 02", "Double Series - s02e03.mkv")
-            };
-            public static readonly string[] LongSeries = new[]
-            {
+            ];
+            public static readonly string[] LongSeries =
+            [
                 Path.Combine("Long Series", "Season 01", "Long Series - s01e01.mp4"),
                 Path.Combine("Long Series", "Season 01", "Long Series - s01e02.mp4"),
                 Path.Combine("Long Series", "Season 01", "Long Series - s01e03.mp4"),
                 Path.Combine("Long Series", "Season 02", "Long Series - s02e01.mp4"),
                 Path.Combine("Long Series", "Season 02", "Long Series - s02e02.mp4"),
                 Path.Combine("Long Series", "Season 02", "Long Series - s02e03.mp4")
-            };
-            public static readonly string[] SingleMovie = new[]
-            {
+            ];
+            public static readonly string[] SingleMovie =
+            [
                 Path.Combine("Series With Specials", "Season 00", "Series With Specials - s00e05.mkv")
-            };
+            ];
         }
     }
 }

@@ -1,5 +1,3 @@
-using System;
-
 namespace PlexCopier
 {
     public class FatalException : Exception

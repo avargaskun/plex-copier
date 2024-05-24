@@ -1,21 +1,16 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-
 namespace tst
 {
     public static class TestFiles
     {
-        public static readonly string[] SingleSeries = new[]
-        {
+        public static readonly string[] SingleSeries =
+        [
             Path.Combine("Single_Series", "[TEST] Single - 01.mkv"),
             Path.Combine("Single_Series", "[TEST] Single - 02.mkv"),
             Path.Combine("Single_Series", "[TEST] Single - 03.mkv"),
-        };
+        ];
 
-        public static readonly string[] DoubleSeries = new[]
-        {
+        public static readonly string[] DoubleSeries =
+        [
             Path.Combine("Double_Series", "Season-01", "[TEST] Double S1 - 01.mkv"),
             Path.Combine("Double_Series", "Season-01", "[TEST] Double S1 - 02.mkv"),
             Path.Combine("Double_Series", "Season-01", "[TEST] Double S1 - 03.mkv"),
@@ -23,20 +18,20 @@ namespace tst
             Path.Combine("Double_Series", "Season-02", "[TEST] Double S2 - 01.mkv"),
             Path.Combine("Double_Series", "Season-02", "[TEST] Double S2 - 02.mkv"),
             Path.Combine("Double_Series", "Season-02", "[TEST] Double S2 - 03.mkv"),
-        };
+        ];
 
-        public static readonly string[] LongSeries = new[]
-        {
+        public static readonly string[] LongSeries =
+        [
             Path.Combine("Long_Series", "[TEST] Long - 01.mp4"),
             Path.Combine("Long_Series", "[TEST] Long - 02.mp4"),
             Path.Combine("Long_Series", "[TEST] Long - 03.mp4"),
             Path.Combine("Long_Series", "[TEST] Long - 04.mp4"),
             Path.Combine("Long_Series", "[TEST] Long - 05.mp4"),
             Path.Combine("Long_Series", "[TEST] Long - 06.mp4"),
-        };
+        ];
 
-        public static readonly string[] SeriesWithSpecials = new[]
-        {
+        public static readonly string[] SeriesWithSpecials =
+        [
             Path.Combine("Series_With_Specials", "Season-00", "[TEST] Specials - 01.mkv"),
             Path.Combine("Series_With_Specials", "Season-00", "[TEST] Specials - 02.mkv"),
             Path.Combine("Series_With_Specials", "Season-00", "[TEST] Specials - 03.mkv"),
@@ -46,7 +41,7 @@ namespace tst
             Path.Combine("Series_With_Specials", "Season-01", "[TEST] Single S1 - 01.mkv"),
             Path.Combine("Series_With_Specials", "Season-01", "[TEST] Single S1 - 02.mkv"),
             Path.Combine("Series_With_Specials", "Season-01", "[TEST] Single S1 - 03.mkv"),
-        };
+        ];
 
         public static void CreateFiles(string root, params string[][] multipleTargets)
         {
@@ -69,7 +64,7 @@ namespace tst
 
         public static string CreateFile(string target)
         {
-            var directory = Directory.GetParent(target).FullName;
+            var directory = Directory.GetParent(target)!.FullName;
             if (!Directory.Exists(directory))
             {
                 Directory.CreateDirectory(directory);

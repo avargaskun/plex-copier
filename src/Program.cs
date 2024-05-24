@@ -1,16 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-
-using PlexCopier.Settings;
+﻿using PlexCopier.Settings;
 using PlexCopier.TvDb;
 
 namespace PlexCopier
 {
     public class Program
     {
-        private static readonly log4net.ILog Log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private static readonly log4net.ILog Log = log4net.LogManager.GetLogger(typeof(Program));
 
         public static void Main(string[] args)
         {
@@ -57,7 +52,7 @@ namespace PlexCopier
             }
         }
 
-        static Options LoadOptions(string file)
+        static Options LoadOptions(string? file)
         {
             file = file ?? FindFile(Options.DefaultFilename);
             if (file == null)
@@ -68,7 +63,7 @@ namespace PlexCopier
             return Options.Load(file);
         }
 
-        static string FindFile(string file)
+        static string? FindFile(string file)
         {
             if (File.Exists(file))
             {

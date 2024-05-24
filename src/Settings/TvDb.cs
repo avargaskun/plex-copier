@@ -1,13 +1,11 @@
-using System;
-
 namespace PlexCopier.Settings
 {
     public class TvDb
     {
-        public string ApiKey { get; set; }
+        public required string ApiKey { get; set; }
 
-        public string UserKey { get; set; }
+        public required string UserKey { get; set; }
 
-        public string UserName { get; set; }
+        public required string UserName { get; set; }
     }
 }

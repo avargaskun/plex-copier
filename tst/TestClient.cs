@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-
 using PlexCopier.TvDb;
 
 namespace tst
@@ -23,10 +19,10 @@ namespace tst
                 new SeriesInfo
                 {
                     Name = "Single Series",
-                    Seasons = new[] {
+                    Seasons = [
                         new SeasonInfo { EpisodeCount = 0 },
                         new SeasonInfo { EpisodeCount = 3 }
-                    }
+                    ]
                 }
             },
             {
@@ -34,11 +30,11 @@ namespace tst
                 new SeriesInfo
                 {
                     Name = "Double Series",
-                    Seasons = new[] {
+                    Seasons = [
                         new SeasonInfo { EpisodeCount = 0 },
                         new SeasonInfo { EpisodeCount = 3 },
                         new SeasonInfo { EpisodeCount = 3 }
-                    }
+                    ]
                 }
             },
             {
@@ -46,11 +42,11 @@ namespace tst
                 new SeriesInfo
                 {
                     Name = "Long Series",
-                    Seasons = new[] {
+                    Seasons = [
                         new SeasonInfo { EpisodeCount = 0 },
                         new SeasonInfo { EpisodeCount = 3 },
                         new SeasonInfo { EpisodeCount = 3 }
-                    }
+                    ]
                 }
             },
             {
@@ -58,10 +54,10 @@ namespace tst
                 new SeriesInfo
                 {
                     Name = "Series With Specials",
-                    Seasons = new[] {
+                    Seasons = [
                         new SeasonInfo { EpisodeCount = 5 },
                         new SeasonInfo { EpisodeCount = 3 }
-                    }
+                    ]
                 }
             }
         };

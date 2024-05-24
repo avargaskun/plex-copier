@@ -1,8 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Threading.Tasks;
 
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -11,15 +7,15 @@ namespace PlexCopier.TvDb
 {
     public class TvDbClient : ITvDbClient
     {
-        private string apikey;
+        private readonly string apikey;
 
         private string userkey;
 
         private string username;
 
-        private string token;
+        private string? token;
 
-        private HttpClient client;
+        private readonly HttpClient client;
 
         private Dictionary<int, SeriesInfo> cache;
 
@@ -29,50 +25,51 @@ namespace PlexCopier.TvDb
             this.userkey = userkey;
             this.username = username;
 
-            this.client = new HttpClient();
-            this.client.BaseAddress = new Uri("https://api.thetvdb.com");
+            client = new HttpClient
+            {
+                BaseAddress = new Uri("https://api.thetvdb.com")
+            };
 
-            this.cache = new Dictionary<int, SeriesInfo>();
+            cache = new Dictionary<int, SeriesInfo>();
         }
 
         public async Task Login()
         {
             var request = new 
             {
-                apikey = this.apikey,
-                userkey = this.userkey,
-                username = this.username
+                apikey,
+                userkey,
+                username
             };
             
-            var response = await this.PostAsync("/login", request);
-            var token = response?["token"];
-            if (token == null || token.Type != JTokenType.String)
+            var response = await PostAsync("/login", request);
+            var token = response?["token"]?.Value<string>();
+            if (string.IsNullOrEmpty(token))
             {
                 throw new FatalException("Missing or invalid token in login response");
             }
 
-            this.token = token.Value<string>();
+            this.token = token;
         }
 
         public async Task<SeriesInfo> GetSeriesInfo(int seriesId)
         {
-            if (this.cache.ContainsKey(seriesId))
+            if (cache.ContainsKey(seriesId))
             {
-                return this.cache[seriesId];
+                return cache[seriesId];
             }
 
-            var response = await this.GetAsync($"series/{seriesId}");
-            var seriesName = response?["data"]?["seriesName"];
-            if (seriesName == null || seriesName.Type != JTokenType.String)
+            var response = await GetAsync($"series/{seriesId}");
+            var seriesName = response?["data"]?["seriesName"]?.Value<string>();
+            if (seriesName == null)
             {
                 throw new FatalException("Missing or invalid series information");
             }
 
-            response = null;
             var seasons = new List<SeasonInfo>();
             for (int page = 1;; ++page)
             {
-                response = await this.GetAsync($"series/{seriesId}/episodes?page={page}");
+                response = await GetAsync($"series/{seriesId}/episodes?page={page}");
                 var episodes = response?["data"];
                 if (episodes == null || episodes.Type != JTokenType.Array)
                 {
@@ -105,31 +102,31 @@ namespace PlexCopier.TvDb
 
             var info = new SeriesInfo
             {
-                Name = seriesName.Value<string>(),
+                Name = seriesName,
                 Seasons = seasons.ToArray()
             };
 
-            this.cache[seriesId] = info;
+            cache[seriesId] = info;
             return info;
         }
 
         private Task<JToken> PostAsync(string requestUri, object content)
         {
-            return this.SendAsync(HttpMethod.Post, requestUri, content);
+            return SendAsync(HttpMethod.Post, requestUri, content);
         }
 
         private Task<JToken> GetAsync(string requestUri)
         {
-            return this.SendAsync(HttpMethod.Get, requestUri);
+            return SendAsync(HttpMethod.Get, requestUri);
         }
 
-        private async Task<JToken> SendAsync(HttpMethod method, string requestUri, object content = null)
+        private async Task<JToken> SendAsync(HttpMethod method, string requestUri, object? content = null)
         {
             using (var request = new HttpRequestMessage(method, requestUri))
             {
-                if (this.token != null)
+                if (token != null)
                 {
-                    request.Headers.TryAddWithoutValidation("Authorization", $"Bearer {this.token}");
+                    request.Headers.TryAddWithoutValidation("Authorization", $"Bearer {token}");
                 }
 
                 if (content != null)
@@ -138,12 +135,12 @@ namespace PlexCopier.TvDb
                     request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
                 }
                 
-                using (var response = await this.client.SendAsync(request))
+                using (var response = await client.SendAsync(request))
                 {
                     response.EnsureSuccessStatusCode();
                     if (response.Content == null || response.Content.Headers.ContentLength.GetValueOrDefault(0) == 0)
                     {
-                        return null;
+                        return new JObject();
                     }
 
                     return JToken.Parse(await response.Content.ReadAsStringAsync());

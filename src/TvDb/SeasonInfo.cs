@@ -1,5 +1,3 @@
-using System;
-
 namespace PlexCopier.TvDb
 {
     public class SeasonInfo

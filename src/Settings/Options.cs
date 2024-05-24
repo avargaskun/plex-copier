@@ -1,6 +1,3 @@
-using System;
-using System.IO;
-
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
@@ -10,22 +7,20 @@ namespace PlexCopier.Settings
     {
         public const string DefaultFilename = "settings.yaml";
 
-        public string Collection { get; set; }
+        public required string Collection { get; set; }
 
-        public TvDb TvDb { get; set; }
+        public required TvDb TvDb { get; set; }
 
-        public Series[] Series { get; set; }
+        public required Series[] Series { get; set; }
 
         public static Options Load(string source)
         {
             var deserializer = new DeserializerBuilder()
-                .WithNamingConvention(new CamelCaseNamingConvention())
+                .WithNamingConvention(CamelCaseNamingConvention.Instance)
                 .Build();
 
-            using (var reader = new StreamReader(source))
-            {
-                return deserializer.Deserialize<Options>(reader);
-            }
+            using var reader = new StreamReader(source);
+            return deserializer.Deserialize<Options>(reader);
         }
     }
 }

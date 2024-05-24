@@ -1,13 +1,12 @@
-using System;
 using System.Text.RegularExpressions;
 
 namespace PlexCopier.Settings
 {
     public class Pattern
     {
-        private Regex regex;
+        private Regex? regex;
 
-        public string Expression { get; set; }
+        public required string Expression { get; set; }
 
         public int? SeasonStart { get; set; }
 
@@ -21,12 +20,12 @@ namespace PlexCopier.Settings
         {
             get
             {
-                if (this.regex == null)
+                if (regex == null)
                 {
-                    this.regex = new Regex(this.Expression);
+                    regex = new Regex(Expression);
                 }
 
-                return this.regex;
+                return regex;
             }
         }
     }
