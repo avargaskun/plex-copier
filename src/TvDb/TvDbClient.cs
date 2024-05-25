@@ -7,6 +7,12 @@ namespace PlexCopier.TvDb
 {
     public class TvDbClient : ITvDbClient
     {
+        private const int RetryCount = 5;
+
+        private static readonly TimeSpan RetryInterval = TimeSpan.FromMilliseconds(50);
+
+        private const int IntervalMultiplier = 2;
+
         private readonly string apikey;
 
         private string userkey;
@@ -25,7 +31,7 @@ namespace PlexCopier.TvDb
             this.userkey = userkey;
             this.username = username;
 
-            client = new HttpClient
+            client = new HttpClient(new RetryHandler(RetryCount, RetryInterval, IntervalMultiplier, new LoggingHandler()))
             {
                 BaseAddress = new Uri("https://api.thetvdb.com")
             };

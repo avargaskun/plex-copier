@@ -1,5 +1,8 @@
-﻿using PlexCopier.Settings;
+﻿using System.Runtime.CompilerServices;
+using PlexCopier.Settings;
 using PlexCopier.TvDb;
+
+[assembly: InternalsVisibleTo("tst")]
 
 namespace PlexCopier
 {
