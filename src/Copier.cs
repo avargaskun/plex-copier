@@ -5,24 +5,24 @@ using PlexCopier.TvDb;
 
 namespace PlexCopier
 {
-    public class Copier : ICopier
+    public class Copier(Arguments arguments, ITvDbClient client, Options options) : ICopier
     {
         private static readonly log4net.ILog Log = log4net.LogManager.GetLogger(typeof(Copier));
 
         private static readonly string InvalidPathCharacters = @"<>:\\/""'!\|\?\*";
 
-        private Arguments arguments;
+        private Arguments arguments = arguments;
 
-        private ITvDbClient client;
+        private ITvDbClient client = client;
 
-        private Options options;
+        private Options options = options;
 
-        public Copier(Arguments arguments, ITvDbClient client, Options options)
-        {
-            this.arguments = arguments;
-            this.client = client;
-            this.options = options;
-        }
+        private SemaphoreSlim copySemaphore = new 
+            (
+                arguments.ParallelOperations > 0 
+                    ? arguments.ParallelOperations 
+                    : int.MaxValue
+            );
 
         public async Task<int> CopyFiles(string? source = null)
         {
@@ -43,7 +43,7 @@ namespace PlexCopier
             var match = await FindSeriesForFile(source);
             if (match != null)
             {
-                CopyFile(source, match);
+                await CopyFile(source, match);
                 return true;
             }
 
@@ -51,13 +51,70 @@ namespace PlexCopier
             return false;
         }
 
-        private void CopyFile(string source, SeriesMatch match)
+        private async Task CopyFile(string source, SeriesMatch match)
         {
-            var seriesName = Regex.Replace(match.Info.Name, $"( *[{InvalidPathCharacters}]+ *)+", " ");
+            await copySemaphore.WaitAsync();
+            try
+            {
+                var seriesName = Regex.Replace(match.Info.Name, $"( *[{InvalidPathCharacters}]+ *)+", " ");
 
-            var file = $"{seriesName} - s{match.Season:D2}e{match.Episode:D2}{Path.GetExtension(source)}";
-            var directory = Path.Combine(options.Collection, seriesName, $"Season {match.Season:D2}");
+                var file = $"{seriesName} - s{match.Season:D2}e{match.Episode:D2}{Path.GetExtension(source)}";
+                var directory = Path.Combine(options.Collection, seriesName, $"Season {match.Season:D2}");
 
+                CreateDirectoryIfNeeded(directory);
+
+                var target = Path.Combine(directory, file);
+                if (!CanCopyFile(target))
+                {
+                    Log.Warn($"Skipping existing file {target}");
+                    return;
+                }
+
+                using var fileLock = new FileLock(source);
+
+                if (arguments.LockFiles && !fileLock.Acquire())
+                {
+                    Log.Warn($"Could not lock file, skipping: {target}");
+                    return;
+                }
+
+                if (match.MoveFiles)
+                {
+                    Log.Info($"Moving file: {source} -> {target}");
+                    if (!arguments.Test)
+                    {
+                        File.Move(source, target);
+                        Log.Info($"File moved to: {target}");
+                    }
+                }
+                else
+                {
+                    Log.Info($"Copying file: {source} -> {target}");
+                    if (!arguments.Test)
+                    {
+                        File.Copy(source, target);
+                        Log.Info($"File copied to: {target}");
+                    }
+                }
+
+                if (arguments.Verify)
+                {
+                    using var compare = new FileCompare();
+                    if (!await compare.AreSame(source, target))
+                    {
+                        Log.Warn($"Target file did not match source, will be deleted: {target}");
+                        File.Delete(target);
+                    }
+                }
+            }
+            finally
+            {
+                copySemaphore.Release();
+            }
+        }
+
+        private void CreateDirectoryIfNeeded(string directory)
+        {
             if (!Directory.Exists(directory))
             {
                 Log.Info($"Creating directory {directory}");
@@ -66,14 +123,15 @@ namespace PlexCopier
                     Directory.CreateDirectory(directory);
                 }
             }
+        }
 
-            var target = Path.Combine(directory, file);
+        private bool CanCopyFile(string target)
+        {
             if (File.Exists(target))
             {
-                if (!match.ReplaceExisting)
+                if (!arguments.Force)
                 {
-                    Log.Warn($"Skipping existing file {target}");
-                    return;
+                    return false;
                 }
                 else
                 {
@@ -84,23 +142,7 @@ namespace PlexCopier
                     }
                 }
             }
-
-            if (match.MoveFiles)
-            {
-                Log.Info($"Moving file: {source} -> {target}");
-                if (!arguments.Test)
-                {
-                    File.Move(source, target);
-                }
-            }
-            else
-            {
-                Log.Info($"Copying file: {source} -> {target}");
-                if (!arguments.Test)
-                {
-                    File.Copy(source, target);
-                }
-            }
+            return true;
         }
 
         private async Task<SeriesMatch?> FindSeriesForFile(string file)
@@ -130,7 +172,7 @@ namespace PlexCopier
             return null;
         }
 
-        private IEnumerable<string> FindTargetFiles(string source)
+        public IEnumerable<string> FindTargetFiles(string source)
         {
             if (File.Exists(source))
             {

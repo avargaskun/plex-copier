@@ -62,7 +62,7 @@ namespace tst
             }
         }
 
-        public static string CreateFile(string target)
+        public static string CreateFile(string target, string? contents = null)
         {
             var directory = Directory.GetParent(target)!.FullName;
             if (!Directory.Exists(directory))
@@ -70,10 +70,23 @@ namespace tst
                 Directory.CreateDirectory(directory);
             }
 
-            var contents = Guid.NewGuid().ToString();
+            contents ??= Guid.NewGuid().ToString();
             File.WriteAllText(target, contents);
 
             return contents;
+        }
+
+        public static void Cleanup()
+        {
+            if (Directory.Exists(TestArguments.DefaultTarget))
+            {
+                Directory.Delete(TestArguments.DefaultTarget, true);
+            }
+
+            if (Directory.Exists(TestOptions.DefaultCollection))
+            {
+                Directory.Delete(TestOptions.DefaultCollection, true);
+            }
         }
     }
 }

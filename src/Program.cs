@@ -41,6 +41,8 @@ namespace PlexCopier
                     {
                         copier.CopyFiles().Wait();
                     }
+
+                    Log.Debug("Program is exiting normally");
                 }
                 catch (FatalException fe)
                 {

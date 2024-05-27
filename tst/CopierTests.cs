@@ -10,7 +10,7 @@ namespace tst
         [SetUp]
         public void BeforeTest()
         {
-            Cleanup();
+            TestFiles.Cleanup();
             Directory.CreateDirectory(TestArguments.DefaultTarget);
             Directory.CreateDirectory(TestOptions.DefaultCollection);
         }
@@ -18,7 +18,7 @@ namespace tst
         [TearDown]
         public void AfterTest()
         {
-            Cleanup();
+            TestFiles.Cleanup();
         }
 
         [Test]
@@ -133,12 +133,15 @@ namespace tst
         [TestCase(true, true, true)]
         [TestCase(true, false, false)]
         [TestCase(false, true, true)]
-        public async Task TestWhetherFileIsReplacedBasedOnSeriesOptions(
+        public async Task TestWhetherFileIsReplacedBasedOnArguments(
             bool? SeriesReplaceExisting,
             bool? PatternReplaceExisting,
             bool shouldBeReplaced)
         {
-            var arguments = TestArguments.Default;
+            var arguments = TestArguments.Default with
+            {
+                Force = shouldBeReplaced
+            };
             var options = TestOptions.Default;
             var client = new TestClient();
 
@@ -198,19 +201,6 @@ namespace tst
             foreach (var file in allFiles)
             {
                 Assert.That(allTargets, Contains.Item(file));
-            }
-        }
-
-        private static void Cleanup()
-        {
-            if (Directory.Exists(TestArguments.DefaultTarget))
-            {
-                Directory.Delete(TestArguments.DefaultTarget, true);
-            }
-
-            if (Directory.Exists(TestOptions.DefaultCollection))
-            {
-                Directory.Delete(TestOptions.DefaultCollection, true);
             }
         }
 

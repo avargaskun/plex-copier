@@ -75,8 +75,15 @@ namespace PlexCopier
                 Log.Debug("The file logger is not running");
             }
         }
+        
+        // Used only to set an override in unit-tests!
+        protected internal virtual Task AsyncDelay(int millis, CancellationToken ct)
+        {
+            Log.DebugFormat("Waiting {0} seconds before copying file", millis);
+            return Task.Delay(millis, ct);
+        }
 
-        private void OnCreated(object sender, FileSystemEventArgs args)
+        private async void OnCreatedOrChanged(object sender, FileSystemEventArgs args)
         {
             try
             {
@@ -87,17 +94,39 @@ namespace PlexCopier
                 else if (Directory.Exists(args.FullPath) && arguments.Recursive && isLinux)
                 {
                     SetupWatcherFor(args.FullPath);
-                    copier.CopyFiles(args.FullPath);
+                    await CopyExistingFiles(args.FullPath);
                 }
                 else if (File.Exists(args.FullPath))
                 {
-                    copier.CopyFiles(args.FullPath);
+                    if (arguments.DelayCopy > 0)
+                    {
+                        await AsyncDelay(arguments.DelayCopy * 1000, CancellationToken.None);
+                    }
+                    await copier.CopyFiles(args.FullPath);
+                }
+                else
+                {
+                    Log.Info($"Event was ignored for path: {args.FullPath}");
                 }
             }
             catch (Exception ex)
             {
                 Log.Error($"Unhandled exception occurred on file watcher handler for: {args.FullPath}", ex);
                 Stop();
+            }
+        }
+
+        private async Task CopyExistingFiles(string directoryPath)
+        {
+            var files = copier.FindTargetFiles(directoryPath);
+            if (arguments.DelayCopy > 0)
+            {
+                await AsyncDelay(arguments.DelayCopy * 1000, CancellationToken.None);
+            }
+
+            foreach (var file in files)
+            {
+                await copier.CopyFiles(file);
             }
         }
 
@@ -118,7 +147,7 @@ namespace PlexCopier
                         IncludeSubdirectories = arguments.Recursive,
                         EnableRaisingEvents = true,
                     };
-                    watcher.Created += OnCreated;
+                    watcher.Created += OnCreatedOrChanged;
                     watcher.Error += OnError;
                     watchers.Add(watcher);
                     watchedFolders.Add(fullPath);
