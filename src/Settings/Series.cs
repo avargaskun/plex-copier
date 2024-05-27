@@ -4,10 +4,6 @@ namespace PlexCopier.Settings
     {
         public int Id { get; set; }
 
-        public bool? MoveFiles { get; set; }
-
-        public bool? ReplaceExisting { get; set; }
-
         public required Pattern[] Patterns { get; set; }
     }
 }

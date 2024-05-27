@@ -3,10 +3,8 @@ using System.Text;
 
 namespace PlexCopier
 {
-    public class FileCompare(HashAlgorithm? algorithm = null) : IDisposable
+    public class FileCompare()
     {
-        private readonly HashAlgorithm algorithm = algorithm ?? MD5.Create();
-
         public async Task<bool> AreSame(string filePath1, string filePath2)
         {
             Task<string>[] tasks = [ComputeHash(filePath1), ComputeHash(filePath2)];
@@ -14,18 +12,13 @@ namespace PlexCopier
             return string.CompareOrdinal(hashes[0], hashes[1]) == 0;
         }
 
-        public void Dispose()
-        {
-            algorithm.Dispose();
-            GC.SuppressFinalize(this);
-        }
-
         private async Task<string> ComputeHash(string filePath)
         {
             byte[] hashBytes;
             using (var stream = File.OpenRead(filePath))
             {
-                hashBytes = await algorithm.ComputeHashAsync(stream);
+                using var md5 = MD5.Create();
+                hashBytes = await md5.ComputeHashAsync(stream);
             }
             StringBuilder sb = new StringBuilder();
             foreach (byte bt in hashBytes) 

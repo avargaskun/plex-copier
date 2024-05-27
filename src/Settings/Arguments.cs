@@ -13,6 +13,9 @@ namespace PlexCopier.Settings
         [Option('r', "recursive", Required = false, HelpText = "If target is a directory, also look into subfolders")]
         public bool Recursive { get; set; }
 
+        [Option('m', "move", Required = false, HelpText = "Move files instead of copying, i.e. delete originals after done")]
+        public bool MoveFiles { get; set; }
+
         [Option('f', "force", Required = false, HelpText = "If target file exists, it will be deleted before copying new file over")]
         public bool Force{ get; set; }
 

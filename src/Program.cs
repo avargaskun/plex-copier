@@ -20,7 +20,10 @@ namespace PlexCopier
                     Log.Debug($"Current directory: {Environment.CurrentDirectory}");
 
                     var arguments = Arguments.Parse(args);
-                    var options = LoadOptions(arguments.Options);
+                    var optionsFile = arguments.Options 
+                        ?? FindFile(Options.DefaultFilename) 
+                        ?? throw new FatalException($"File {Options.DefaultFilename} could not be found.");
+                    using var options = Options.Load(optionsFile);
                     
                     var client = new TvDbClient(options.TvDb.ApiKey, options.TvDb.UserKey, options.TvDb.UserName);
                     client.Login().Wait();
@@ -29,6 +32,7 @@ namespace PlexCopier
 
                     if (arguments.Watch)
                     {
+                        options.WatchForChanges(optionsFile);
                         var watcher = new Watcher(arguments, copier);
                         Console.CancelKeyPress += (sender, args) =>
                         {
@@ -64,17 +68,6 @@ namespace PlexCopier
                     Log.Error(e);
                 }
             }
-        }
-
-        static Options LoadOptions(string? file)
-        {
-            file = file ?? FindFile(Options.DefaultFilename);
-            if (file == null)
-            {
-                throw new FatalException($"File {Options.DefaultFilename} could not be found.");
-            }
-
-            return Options.Load(file);
         }
 
         static string? FindFile(string file)

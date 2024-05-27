@@ -64,7 +64,7 @@ namespace PlexCopier
                 CreateDirectoryIfNeeded(directory);
 
                 var target = Path.Combine(directory, file);
-                if (!CanCopyFile(target))
+                if (File.Exists(target) && !arguments.Force)
                 {
                     Log.Warn($"Skipping existing file {target}");
                     return;
@@ -78,7 +78,7 @@ namespace PlexCopier
                     return;
                 }
 
-                if (match.MoveFiles)
+                if (arguments.MoveFiles)
                 {
                     Log.Info($"Moving file: {source} -> {target}");
                     if (!arguments.Test)
@@ -92,14 +92,14 @@ namespace PlexCopier
                     Log.Info($"Copying file: {source} -> {target}");
                     if (!arguments.Test)
                     {
-                        File.Copy(source, target);
+                        File.Copy(source, target, arguments.Force);
                         Log.Info($"File copied to: {target}");
                     }
                 }
 
                 if (arguments.Verify)
                 {
-                    using var compare = new FileCompare();
+                    var compare = new FileCompare();
                     if (!await compare.AreSame(source, target))
                     {
                         Log.Warn($"Target file did not match source, will be deleted: {target}");
@@ -123,26 +123,6 @@ namespace PlexCopier
                     Directory.CreateDirectory(directory);
                 }
             }
-        }
-
-        private bool CanCopyFile(string target)
-        {
-            if (File.Exists(target))
-            {
-                if (!arguments.Force)
-                {
-                    return false;
-                }
-                else
-                {
-                    Log.Warn($"Deleting existing file {target}");
-                    if (!arguments.Test)
-                    {
-                        File.Delete(target);
-                    }
-                }
-            }
-            return true;
         }
 
         private async Task<SeriesMatch?> FindSeriesForFile(string file)
@@ -227,44 +207,6 @@ namespace PlexCopier
                 Info = info;
                 Season = season;
                 Episode = episode;
-            }
-
-            public bool MoveFiles
-            {
-                get
-                {
-                    if (Pattern.MoveFiles.HasValue)
-                    {
-                        return Pattern.MoveFiles.Value;
-                    }
-                    else if (Series.MoveFiles.HasValue)
-                    {
-                        return Series.MoveFiles.Value;
-                    }
-                    else
-                    {
-                        return false;
-                    }
-                }
-            }
-
-            public bool ReplaceExisting
-            {
-                get
-                {
-                    if (Pattern.ReplaceExisting.HasValue)
-                    {
-                        return Pattern.ReplaceExisting.Value;
-                    }
-                    else if (Series.ReplaceExisting.HasValue)
-                    {
-                        return Series.ReplaceExisting.Value;
-                    }
-                    else
-                    {
-                        return false;
-                    }
-                }
             }
         }
     }

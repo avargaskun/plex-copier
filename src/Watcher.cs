@@ -83,7 +83,7 @@ namespace PlexCopier
             return Task.Delay(millis, ct);
         }
 
-        private async void OnCreatedOrChanged(object sender, FileSystemEventArgs args)
+        private async void OnCreated(object sender, FileSystemEventArgs args)
         {
             try
             {
@@ -147,7 +147,7 @@ namespace PlexCopier
                         IncludeSubdirectories = arguments.Recursive,
                         EnableRaisingEvents = true,
                     };
-                    watcher.Created += OnCreatedOrChanged;
+                    watcher.Created += OnCreated;
                     watcher.Error += OnError;
                     watchers.Add(watcher);
                     watchedFolders.Add(fullPath);

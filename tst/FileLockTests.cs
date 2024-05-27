@@ -21,7 +21,7 @@ namespace tst
         public void LockingUnlockedFileShouldSucceed()
         {
             var filePath = Path.GetFullPath(Path.Join("Unlocked", "File.mp4"));
-            TestFiles.CreateFile(filePath);
+            TestFiles.CreateFile(Path.Combine(TestArguments.DefaultTarget, filePath));
             using var fileLock = new FileLock(filePath);
             Assert.That(fileLock.Acquire(), Is.True);
         }
@@ -30,7 +30,7 @@ namespace tst
         public void LockingLockedFileShouldFailWhileFileIsNotSharedForRead()
         {
             var filePath = Path.GetFullPath(Path.Join("Locked", "File.mp4"));
-            TestFiles.CreateFile(filePath);            
+            TestFiles.CreateFile(Path.Combine(TestArguments.DefaultTarget, filePath));
             using var fileLock = new FileLock(filePath);
             using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.None))
             {
@@ -44,7 +44,7 @@ namespace tst
         public void LockingLockedFileShouldFailWhileFileIsOpenForWrite()
         {
             var filePath = Path.GetFullPath(Path.Join("Locked", "File.mp4"));
-            TestFiles.CreateFile(filePath);            
+            TestFiles.CreateFile(Path.Combine(TestArguments.DefaultTarget, filePath));
             using var fileLock = new FileLock(filePath);
             using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.Read))
             {

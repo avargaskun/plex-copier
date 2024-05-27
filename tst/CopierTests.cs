@@ -124,35 +124,17 @@ namespace tst
         }
 
         [Test]
-        [TestCase(null, null, false)]
-        [TestCase(null, false, false)]
-        [TestCase(false, null, false)]
-        [TestCase(false, false, false)]
-        [TestCase(null, true, true)]
-        [TestCase(true, null, true)]
-        [TestCase(true, true, true)]
-        [TestCase(true, false, false)]
-        [TestCase(false, true, true)]
-        public async Task TestWhetherFileIsReplacedBasedOnArguments(
-            bool? SeriesReplaceExisting,
-            bool? PatternReplaceExisting,
-            bool shouldBeReplaced)
+        [TestCase(true)]
+        [TestCase(false)]
+        public async Task TestWhetherFileIsReplacedBasedOnArguments(bool shouldBeReplaced)
         {
             var arguments = TestArguments.Default with
             {
                 Force = shouldBeReplaced
             };
+
             var options = TestOptions.Default;
             var client = new TestClient();
-
-            foreach(var series in options.Series)
-            {
-                series.ReplaceExisting = SeriesReplaceExisting;
-                foreach (var pattern in series.Patterns)
-                {
-                    pattern.ReplaceExisting = PatternReplaceExisting;
-                }
-            }
 
             TestFiles.CreateFiles(TestArguments.DefaultTarget, TestFiles.SingleSeries);
             
