@@ -5,6 +5,8 @@ namespace PlexCopier.Utils
 {
     public class FileCompare()
     {
+        private const int ReadBuffer = 65536; // 64KB
+
         public async Task<bool> AreSame(string filePath1, string filePath2)
         {
             Task<string>[] tasks = [ComputeHash(filePath1), ComputeHash(filePath2)];
@@ -15,17 +17,28 @@ namespace PlexCopier.Utils
         private async Task<string> ComputeHash(string filePath)
         {
             byte[] hashBytes;
-            using (var stream = File.OpenRead(filePath))
+            using (var stream = OpenSource(filePath))
             {
                 using var md5 = MD5.Create();
                 hashBytes = await md5.ComputeHashAsync(stream);
             }
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new();
             foreach (byte bt in hashBytes)
             {
                 sb.Append(bt.ToString("x2"));
             }
             return sb.ToString();
+        }
+
+        private FileStream OpenSource(string source)
+        {
+            return new FileStream(
+                source, 
+                FileMode.Open, 
+                FileAccess.Read, 
+                FileShare.Read, 
+                ReadBuffer, 
+                FileOptions.Asynchronous | FileOptions.SequentialScan);
         }
     }
 }

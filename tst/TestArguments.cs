@@ -8,7 +8,7 @@ namespace tst
 
         public static string DefaultOptions = Path.Combine(Environment.CurrentDirectory, Options.DefaultFilename);
 
-        public static Arguments Default => new Arguments
+        public static Arguments Default => new()
         {
             Target = DefaultTarget,
             Recursive = true,
@@ -16,6 +16,8 @@ namespace tst
             Options = DefaultOptions,
             IgnorePaths = [],
             ParallelOperations = 1,
+            WriteThrough = true,
+            FileBuffer = 4096,
         };
     }
 }

@@ -23,6 +23,8 @@ namespace PlexCopier
                 : int.MaxValue
         );
 
+        protected internal IFileManager FileManager { get; set; } = new FileManager(arguments);
+
         public Task<int> CopyFiles(CancellationToken token)
         {
             return CopyFiles(arguments.Target, token);
@@ -82,7 +84,7 @@ namespace PlexCopier
             var file = $"{seriesName} - s{match.Season:D2}e{match.Episode:D2}{Path.GetExtension(source)}";
             var directory = Path.Combine(options.Collection, seriesName, $"Season {match.Season:D2}");
 
-            CreateDirectoryIfNeeded(directory);
+            Directory.CreateDirectory(directory);
 
             var target = Path.Combine(directory, file);
             if (File.Exists(target) && !arguments.Force)
@@ -104,7 +106,7 @@ namespace PlexCopier
                 Log.Info($"Moving file: {source} -> {target}");
                 if (!arguments.Test)
                 {
-                    File.Move(source, target);
+                    await FileManager.MoveAsync(source, target);
                     Log.Info($"File moved to: {target}");
                 }
             }
@@ -113,7 +115,7 @@ namespace PlexCopier
                 Log.Info($"Copying file: {source} -> {target}");
                 if (!arguments.Test)
                 {
-                    File.Copy(source, target, arguments.Force);
+                    await FileManager.CopyAsync(source, target);
                     Log.Info($"File copied to: {target}");
                 }
             }
@@ -125,23 +127,11 @@ namespace PlexCopier
                 if (!await compare.AreSame(source, target))
                 {
                     Log.Warn($"Target file did not match source, will be deleted: {target}");
-                    File.Delete(target);
+                    FileManager.Delete(target);
                 }
                 else
                 {
                     Log.Info($"File {target} verified successfully");
-                }
-            }
-        }
-
-        private void CreateDirectoryIfNeeded(string directory)
-        {
-            if (!Directory.Exists(directory))
-            {
-                Log.Info($"Creating directory {directory}");
-                if (!arguments.Test)
-                {
-                    Directory.CreateDirectory(directory);
                 }
             }
         }

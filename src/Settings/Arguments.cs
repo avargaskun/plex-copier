@@ -29,17 +29,23 @@ namespace PlexCopier.Settings
         [Option('w', "watch", Required = false, Default = false, HelpText ="Watches for file changes in the specified folder")]
         public bool Watch { get; set; }
 
-        [Option('d', "delay", Required = false, HelpText = "When watching a folder, specifies the time (in seconds) to wait after a file is observed, before beginning the copy operation", Default = (int)30)]
+        [Option('d', "delay", Required = false, Default = 30, HelpText = "When watching a folder, specifies the time (in seconds) to wait after a file is observed, before beginning the copy operation")]
         public int DelayCopy { get; set; }
 
         [Option('v', "verify", Required = false, HelpText = "Verify the hash of the copied files against the source after copying")]
         public bool Verify { get; set; }
 
-        [Option('p', "parallel", Required = false, HelpText = "Specifies how many copy operations may happen in parallel. Set to 0 for unlimited.", Default = (int)1)]
+        [Option('p', "parallel", Required = false, Default = 1, HelpText = "Specifies how many copy operations may happen in parallel. Set to 0 for unlimited.")]
         public int ParallelOperations { get; set; }
 
         [Option('l', "lock", Required = false, HelpText = "When set, a lock will be acquired on the source files, to avoid any modifications while copying")]
         public bool LockFiles { get; set; }
+
+        [Option('b', "buffer", Required = false, Default = 4096, HelpText = "The memory buffer size to use when performing File IO. Set to 0 to disable.")]
+        public int FileBuffer { get; set; }
+
+        [Option("wt", Required = false, Default = true, HelpText = "Indicates that the system should write through any intermediate cache and go directly to disk.")]
+        public bool WriteThrough { get; set; }
 
         public FileFilter Filter => new FileFilter(IgnorePaths ?? []);
 
