@@ -35,7 +35,7 @@ namespace tst
                     condition();
                     completed = true;
                 }
-                catch(Exception ex)
+                catch
                 {
                     if (await Task.WhenAny(Task.Delay(pollingInterval ?? DefaultPollingInterval), timeoutTask) == timeoutTask)
                     {

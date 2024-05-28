@@ -1,5 +1,5 @@
 using NUnit.Framework;
-using PlexCopier;
+using PlexCopier.Utils;
 
 namespace tst
 {

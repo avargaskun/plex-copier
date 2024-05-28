@@ -1,5 +1,6 @@
 using System.Text.Json;
 using NUnit.Framework;
+using PlexCopier.Utils;
 
 namespace tst
 {

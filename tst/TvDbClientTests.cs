@@ -22,9 +22,9 @@ namespace tst
         public async Task RetrieveSeriesWithMultipleSeasons()
         {
             var client = new TvDbClient(apiKey, userKey, userName);
-            await client.Login();
+            await client.Login(CancellationToken.None);
 
-            var series = await client.GetSeriesInfo(79035);
+            var series = await client.GetSeriesInfo(79035, CancellationToken.None);
 
             Assert.That(series.Name, Is.EqualTo("Mahoromatic: Automatic Maiden"));
             Assert.That(series.Seasons.Length, Is.EqualTo(3));

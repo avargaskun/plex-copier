@@ -1,17 +1,20 @@
 using System.Reflection;
 
-public static class ObjectExtensions
+namespace PlexCopier.Utils
 {
-    public static void CopyTo<T>(this T sourceObject, T targetObject, bool skipNull = false) where T : class
+    public static class ObjectExtensions
     {
-        foreach (PropertyInfo property in typeof(T).GetProperties().Where(p => p.CanWrite))
+        public static void CopyTo<T>(this T sourceObject, T targetObject, bool skipNull = false) where T : class
         {
-            var sourceValue = property.GetValue(sourceObject, null);
-            if (sourceValue == null && skipNull)
+            foreach (PropertyInfo property in typeof(T).GetProperties().Where(p => p.CanWrite))
             {
-                continue;
+                var sourceValue = property.GetValue(sourceObject, null);
+                if (sourceValue == null && skipNull)
+                {
+                    continue;
+                }
+                property.SetValue(targetObject, sourceValue, null);
             }
-            property.SetValue(targetObject, sourceValue, null);
         }
     }
 }

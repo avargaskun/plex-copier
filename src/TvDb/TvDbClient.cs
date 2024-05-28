@@ -39,7 +39,7 @@ namespace PlexCopier.TvDb
             cache = new Dictionary<int, SeriesInfo>();
         }
 
-        public async Task Login()
+        public async Task Login(CancellationToken ct)
         {
             var request = new 
             {
@@ -48,7 +48,7 @@ namespace PlexCopier.TvDb
                 username
             };
             
-            var response = await PostAsync("/login", request);
+            var response = await PostAsync("/login", request, ct);
             var token = response?["token"]?.Value<string>();
             if (string.IsNullOrEmpty(token))
             {
@@ -58,14 +58,14 @@ namespace PlexCopier.TvDb
             this.token = token;
         }
 
-        public async Task<SeriesInfo> GetSeriesInfo(int seriesId)
+        public async Task<SeriesInfo> GetSeriesInfo(int seriesId, CancellationToken token)
         {
             if (cache.ContainsKey(seriesId))
             {
                 return cache[seriesId];
             }
 
-            var response = await GetAsync($"series/{seriesId}");
+            var response = await GetAsync($"series/{seriesId}", token);
             var seriesName = response?["data"]?["seriesName"]?.Value<string>();
             if (seriesName == null)
             {
@@ -75,7 +75,7 @@ namespace PlexCopier.TvDb
             var seasons = new List<SeasonInfo>();
             for (int page = 1;; ++page)
             {
-                response = await GetAsync($"series/{seriesId}/episodes?page={page}");
+                response = await GetAsync($"series/{seriesId}/episodes?page={page}", token);
                 var episodes = response?["data"];
                 if (episodes == null || episodes.Type != JTokenType.Array)
                 {
@@ -116,17 +116,17 @@ namespace PlexCopier.TvDb
             return info;
         }
 
-        private Task<JToken> PostAsync(string requestUri, object content)
+        private Task<JToken> PostAsync(string requestUri, object content, CancellationToken token)
         {
-            return SendAsync(HttpMethod.Post, requestUri, content);
+            return SendAsync(HttpMethod.Post, requestUri, content, token);
         }
 
-        private Task<JToken> GetAsync(string requestUri)
+        private Task<JToken> GetAsync(string requestUri, CancellationToken token)
         {
-            return SendAsync(HttpMethod.Get, requestUri);
+            return SendAsync(HttpMethod.Get, requestUri, content: null, token);
         }
 
-        private async Task<JToken> SendAsync(HttpMethod method, string requestUri, object? content = null)
+        private async Task<JToken> SendAsync(HttpMethod method, string requestUri, object? content, CancellationToken ct)
         {
             using (var request = new HttpRequestMessage(method, requestUri))
             {
@@ -141,7 +141,7 @@ namespace PlexCopier.TvDb
                     request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
                 }
                 
-                using (var response = await client.SendAsync(request))
+                using (var response = await client.SendAsync(request, ct))
                 {
                     response.EnsureSuccessStatusCode();
                     if (response.Content == null || response.Content.Headers.ContentLength.GetValueOrDefault(0) == 0)
@@ -149,7 +149,7 @@ namespace PlexCopier.TvDb
                         return new JObject();
                     }
 
-                    return JToken.Parse(await response.Content.ReadAsStringAsync());
+                    return JToken.Parse(await response.Content.ReadAsStringAsync(ct));
                 }
             }
         }

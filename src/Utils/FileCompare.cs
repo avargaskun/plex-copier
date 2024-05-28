@@ -1,7 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 
-namespace PlexCopier
+namespace PlexCopier.Utils
 {
     public class FileCompare()
     {
@@ -21,7 +21,7 @@ namespace PlexCopier
                 hashBytes = await md5.ComputeHashAsync(stream);
             }
             StringBuilder sb = new StringBuilder();
-            foreach (byte bt in hashBytes) 
+            foreach (byte bt in hashBytes)
             {
                 sb.Append(bt.ToString("x2"));
             }

@@ -1,4 +1,5 @@
 using CommandLine;
+using PlexCopier.Utils;
 
 namespace PlexCopier.Settings
 {

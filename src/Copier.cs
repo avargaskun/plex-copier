@@ -2,6 +2,7 @@ using System.Text.RegularExpressions;
 
 using PlexCopier.Settings;
 using PlexCopier.TvDb;
+using PlexCopier.Utils;
 
 namespace PlexCopier
 {
@@ -11,25 +12,37 @@ namespace PlexCopier
 
         private static readonly string InvalidPathCharacters = @"<>:\\/""'!\|\?\*";
 
-        private Arguments arguments = arguments;
+        private readonly EpisodeFinder episodeFinder = new(options, client);
 
-        private ITvDbClient client = client;
-
-        private Options options = options;
+        private readonly PathTraverser pathTraverser = new();
 
         private SemaphoreSlim copySemaphore = new 
-            (
-                arguments.ParallelOperations > 0 
-                    ? arguments.ParallelOperations 
-                    : int.MaxValue
-            );
+        (
+            arguments.ParallelOperations > 0 
+                ? arguments.ParallelOperations 
+                : int.MaxValue
+        );
 
-        public async Task<int> CopyFiles(string? source = null)
+        public Task<int> CopyFiles(CancellationToken token)
+        {
+            return CopyFiles(arguments.Target, token);
+        }
+
+        public async Task<int> CopyFiles(string source, CancellationToken token)
         {
             int matches = 0;
-            foreach (var file in FindTargetFiles(source ?? arguments.Target))
+            var foundFiles = pathTraverser.FindFilesInPath(source ?? arguments.Target, arguments.Recursive);
+            var copyTasks = foundFiles.Select(file => CopySingleFile(file, token));
+            // The cancellation token is not used here - that is on purpose
+            // This should wait for any copy operation that is in flight
+            await Task.WhenAll();
+            foreach (var task in copyTasks)
             {
-                if (await CopyFile(file))
+                if (task.IsFaulted)
+                {
+                    Log.Error($"Failed to copy a file in {source}", task.Exception);
+                }
+                else if (task.Result)
                 {
                     matches++;
                 }
@@ -38,78 +51,86 @@ namespace PlexCopier
             return matches;
         }
 
-        private async Task<bool> CopyFile(string source)
+        private async Task<bool> CopySingleFile(string source, CancellationToken token)
         {
-            var match = await FindSeriesForFile(source);
+            var match = await episodeFinder.FindForFile(source, token);
             if (match != null)
             {
-                await CopyFile(source, match);
-                return true;
+                await copySemaphore.WaitAsync(token);
+                try
+                {
+                    // Once we begin the copy operation there's no turning back. 
+                    // The CancellationToken will not be used beyond this point
+                    token.ThrowIfCancellationRequested();
+                    await CopySingleFile(source, match);
+                    return true;
+                }
+                finally
+                {
+                    copySemaphore.Release();
+                }
             }
 
             Log.Warn($"A match could not be found for file {source}");
             return false;
         }
 
-        private async Task CopyFile(string source, SeriesMatch match)
+        private async Task CopySingleFile(string source, EpisodeMatch match)
         {
-            await copySemaphore.WaitAsync();
-            try
+            var seriesName = Regex.Replace(match.Info.Name, $"( *[{InvalidPathCharacters}]+ *)+", " ");
+
+            var file = $"{seriesName} - s{match.Season:D2}e{match.Episode:D2}{Path.GetExtension(source)}";
+            var directory = Path.Combine(options.Collection, seriesName, $"Season {match.Season:D2}");
+
+            CreateDirectoryIfNeeded(directory);
+
+            var target = Path.Combine(directory, file);
+            if (File.Exists(target) && !arguments.Force)
             {
-                var seriesName = Regex.Replace(match.Info.Name, $"( *[{InvalidPathCharacters}]+ *)+", " ");
+                Log.Warn($"Skipping existing file {target}");
+                return;
+            }
 
-                var file = $"{seriesName} - s{match.Season:D2}e{match.Episode:D2}{Path.GetExtension(source)}";
-                var directory = Path.Combine(options.Collection, seriesName, $"Season {match.Season:D2}");
+            using var fileLock = new FileLock(source);
 
-                CreateDirectoryIfNeeded(directory);
+            if (arguments.LockFiles && !fileLock.Acquire())
+            {
+                Log.Warn($"Could not lock file, skipping: {target}");
+                return;
+            }
 
-                var target = Path.Combine(directory, file);
-                if (File.Exists(target) && !arguments.Force)
+            if (arguments.MoveFiles)
+            {
+                Log.Info($"Moving file: {source} -> {target}");
+                if (!arguments.Test)
                 {
-                    Log.Warn($"Skipping existing file {target}");
-                    return;
+                    File.Move(source, target);
+                    Log.Info($"File moved to: {target}");
                 }
-
-                using var fileLock = new FileLock(source);
-
-                if (arguments.LockFiles && !fileLock.Acquire())
+            }
+            else
+            {
+                Log.Info($"Copying file: {source} -> {target}");
+                if (!arguments.Test)
                 {
-                    Log.Warn($"Could not lock file, skipping: {target}");
-                    return;
+                    File.Copy(source, target, arguments.Force);
+                    Log.Info($"File copied to: {target}");
                 }
+            }
 
-                if (arguments.MoveFiles)
+            if (arguments.Verify)
+            {
+                Log.Info($"Verifying file integrity for: {target}");
+                var compare = new FileCompare();
+                if (!await compare.AreSame(source, target))
                 {
-                    Log.Info($"Moving file: {source} -> {target}");
-                    if (!arguments.Test)
-                    {
-                        File.Move(source, target);
-                        Log.Info($"File moved to: {target}");
-                    }
+                    Log.Warn($"Target file did not match source, will be deleted: {target}");
+                    File.Delete(target);
                 }
                 else
                 {
-                    Log.Info($"Copying file: {source} -> {target}");
-                    if (!arguments.Test)
-                    {
-                        File.Copy(source, target, arguments.Force);
-                        Log.Info($"File copied to: {target}");
-                    }
+                    Log.Info($"File {target} verified successfully");
                 }
-
-                if (arguments.Verify)
-                {
-                    var compare = new FileCompare();
-                    if (!await compare.AreSame(source, target))
-                    {
-                        Log.Warn($"Target file did not match source, will be deleted: {target}");
-                        File.Delete(target);
-                    }
-                }
-            }
-            finally
-            {
-                copySemaphore.Release();
             }
         }
 
@@ -122,91 +143,6 @@ namespace PlexCopier
                 {
                     Directory.CreateDirectory(directory);
                 }
-            }
-        }
-
-        private async Task<SeriesMatch?> FindSeriesForFile(string file)
-        {
-            foreach (var series in options.Series)
-            {
-                foreach (var pattern in series.Patterns)
-                {
-                    var match = pattern.Regex.Match(Path.GetFileNameWithoutExtension(file));
-                    if (match.Success)
-                    {
-                        var seriesInfo = await client.GetSeriesInfo(series.Id);
-                        var season = pattern.SeasonStart.GetValueOrDefault(1);
-                        var episode = match.Groups.Count > 1 ? int.Parse(match.Groups[1].Value) : 1;
-                        episode += pattern.EpisodeOffset.GetValueOrDefault(0);
-                        while (episode > seriesInfo.Seasons[season].EpisodeCount && seriesInfo.Seasons.Length > season + 1)
-                        {
-                            episode -= seriesInfo.Seasons[season].EpisodeCount;
-                            season++;
-                        }
-
-                        return new SeriesMatch(series, pattern, seriesInfo, season, episode);
-                    }                
-                }
-            }
-
-            return null;
-        }
-
-        public IEnumerable<string> FindTargetFiles(string source)
-        {
-            if (File.Exists(source))
-            {
-                yield return source;
-            }
-            else if (!Directory.Exists(source))
-            {
-                throw new FatalException($"Target does not exist: {source}");
-            }
-            else if (!arguments.Recursive)
-            {
-                foreach (var file in Directory.GetFiles(source).OrderBy(f => f))
-                {
-                    yield return file;
-                }
-            }
-            else
-            {
-                var stack = new Stack<string>();
-                stack.Push(source);
-                while (stack.Count > 0)
-                {
-                    source = stack.Pop();
-                    foreach (var directory in Directory.GetDirectories(source).OrderBy(d => d))
-                    {
-                        stack.Push(directory);
-                    }
-                    foreach (var file in Directory.GetFiles(source).OrderBy(f => f))
-                    {
-                        yield return file;
-                    }
-                }
-            }
-        }
-
-        private class SeriesMatch
-        {
-            public Series Series { get; set; }
-
-            public Pattern Pattern { get; set; }
-
-            public SeriesInfo Info { get; set; }
-
-            public int Season { get; set; }
-
-            public int Episode { get; set; }
-
-            public SeriesMatch(Series series, Pattern pattern, SeriesInfo info, int season, int episode)
-            {
-                Series = series;
-                Pattern = pattern;
-                Info = info;
-                Season = season;
-                Episode = episode;
             }
         }
     }

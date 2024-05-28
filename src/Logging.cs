@@ -22,7 +22,7 @@ namespace PlexCopier
             }
             else
             {
-                BasicConfigurator.Configure(repository, new log4net.Appender.ConsoleAppender());
+                BasicConfigurator.Configure(repository, new ConsoleAppender());
             }
         }
 

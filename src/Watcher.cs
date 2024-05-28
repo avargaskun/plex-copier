@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using PlexCopier.Settings;
+using PlexCopier.Utils;
 
 namespace PlexCopier
 {
@@ -15,9 +16,21 @@ namespace PlexCopier
 
         private readonly bool isLinux;
 
+        private readonly object watcherLock = new();
+
+        private readonly object runLock = new();
+
+        private readonly PathTraverser pathTraverser = new();
+
+        private bool started = false;
+
         private List<FileSystemWatcher> watchers;
 
         private HashSet<string> watchedFolders;
+
+        private CountdownEvent runningOps = new(1);
+
+        private CancellationTokenSource runningCts = new();
 
         public Watcher(Arguments arguments, ICopier copier)
         {
@@ -36,43 +49,53 @@ namespace PlexCopier
 
         public event EventHandler<EventArgs>? Started;
 
-        public bool IsRunning { get; set; }
+        public bool IsRunning => started && !runningCts.IsCancellationRequested;
         
         public void Dispose()
         {
             Stop();
             stopped.Dispose();
+            runningOps.Dispose();
+            runningCts.Dispose();
             GC.SuppressFinalize(this);
         }
 
         public void Start()
         {
-            Stop();
+            lock (runLock)
+            {
+                if (IsRunning)
+                {
+                    throw new FatalException("This watcher is already running");
+                }
+
+                started = true;
+            }
 
             SetupWatcherFor(arguments.Target);
-            IsRunning = true;
             Started?.Invoke(this, EventArgs.Empty);
 
+            Log.Debug("File watcher started, waiting for termination signal");
             stopped.WaitOne();
-            IsRunning = false;
+            if (!runningOps.IsSet)
+            {
+                Log.Info($"Waiting for pending copy operations before exiting");
+                runningOps.Wait();
+            }
         }
 
         public void Stop()
         {
-            if (IsRunning)
+            lock (runLock)
             {
-                Log.Info("Stoping file watchers");
-                lock (this)
+                if (IsRunning)
                 {
-                    watchers.ForEach(w => w.Dispose());
-                    watchers = [];
-                    watchedFolders = [];
+                    Log.Info("Stopping the file watchers");
+                    StopWatchers();
+                    stopped.Set();
+                    runningCts.Cancel();
+                    runningOps.Signal();
                 }
-                stopped.Set();
-            }
-            else
-            {
-                Log.Debug("The file logger is not running");
             }
         }
         
@@ -98,11 +121,7 @@ namespace PlexCopier
                 }
                 else if (File.Exists(args.FullPath))
                 {
-                    if (arguments.DelayCopy > 0)
-                    {
-                        await AsyncDelay(arguments.DelayCopy * 1000, CancellationToken.None);
-                    }
-                    await copier.CopyFiles(args.FullPath);
+                    await PerformCopy([args.FullPath]);
                 }
                 else
                 {
@@ -118,15 +137,29 @@ namespace PlexCopier
 
         private async Task CopyExistingFiles(string directoryPath)
         {
-            var files = copier.FindTargetFiles(directoryPath);
+            var files = pathTraverser.FindFilesInPath(directoryPath, arguments.Recursive);
+            await PerformCopy(files);
+        }
+
+        private async Task PerformCopy(IEnumerable<string> sources)
+        {
             if (arguments.DelayCopy > 0)
             {
-                await AsyncDelay(arguments.DelayCopy * 1000, CancellationToken.None);
+                await AsyncDelay(arguments.DelayCopy * 1000, runningCts.Token);
             }
 
-            foreach (var file in files)
+            if (IsRunning)
             {
-                await copier.CopyFiles(file);
+                runningOps.AddCount();
+                try
+                {
+                    var tasks = sources.Select(source => copier.CopyFiles(source, runningCts.Token));
+                    await Task.WhenAll(tasks);
+                }
+                finally
+                {
+                    runningOps.Signal();
+                }
             }
         }
 
@@ -138,7 +171,7 @@ namespace PlexCopier
 
         private void SetupWatcherFor(string source)
         {
-            lock(this)
+            lock(watcherLock)
             {
                 var fullPath = Path.GetFullPath(source);
                 if (!watchedFolders.Contains(fullPath)) {
@@ -153,6 +186,17 @@ namespace PlexCopier
                     watchedFolders.Add(fullPath);
                     Log.Info($"Started file watcher for {fullPath}");
                 }
+            }
+        }
+
+        private void StopWatchers()
+        {
+            lock (watcherLock)
+            {
+                Log.Info("Stoping file watchers");
+                watchers.ForEach(w => w.Dispose());
+                watchers = [];
+                watchedFolders = [];
             }
         }
     }

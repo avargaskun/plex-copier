@@ -1,4 +1,4 @@
-namespace PlexCopier
+namespace PlexCopier.Utils
 {
     public class FileLock(string filePath) : IDisposable
     {
@@ -10,7 +10,7 @@ namespace PlexCopier
 
         public bool Acquire()
         {
-            lock(this)
+            lock (this)
             {
                 if (lockStream != null)
                 {
@@ -39,7 +39,7 @@ namespace PlexCopier
 
         public void Release()
         {
-            lock(this)
+            lock (this)
             {
                 if (lockStream != null)
                 {

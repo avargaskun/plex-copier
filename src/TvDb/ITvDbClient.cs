@@ -2,8 +2,8 @@ namespace PlexCopier.TvDb
 {
     public interface ITvDbClient
     {
-        Task Login();
+        Task Login(CancellationToken token);
 
-        Task<SeriesInfo> GetSeriesInfo(int seriesId);
+        Task<SeriesInfo> GetSeriesInfo(int seriesId, CancellationToken token);
     }
 }

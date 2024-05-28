@@ -15,6 +15,7 @@ namespace tst
             Test = false,
             Options = DefaultOptions,
             IgnorePaths = [],
+            ParallelOperations = 1,
         };
     }
 }

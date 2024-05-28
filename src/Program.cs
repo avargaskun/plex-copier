@@ -26,7 +26,7 @@ namespace PlexCopier
                     using var options = Options.Load(optionsFile);
                     
                     var client = new TvDbClient(options.TvDb.ApiKey, options.TvDb.UserKey, options.TvDb.UserName);
-                    client.Login().Wait();
+                    client.Login(CancellationToken.None).Wait();
 
                     var copier = new Copier(arguments, client, options);
 
@@ -43,7 +43,7 @@ namespace PlexCopier
                     }
                     else
                     {
-                        copier.CopyFiles().Wait();
+                        copier.CopyFiles(CancellationToken.None).Wait();
                     }
 
                     Log.Debug("Program is exiting normally");

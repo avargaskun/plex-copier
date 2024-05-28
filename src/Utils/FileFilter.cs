@@ -1,4 +1,4 @@
-namespace PlexCopier
+namespace PlexCopier.Utils
 {
     public class FileFilter
     {
@@ -7,7 +7,7 @@ namespace PlexCopier
         public FileFilter(IEnumerable<string> foldersToIgnore)
         {
             this.foldersToIgnore = new List<string>();
-            foreach(var rawPath in foldersToIgnore)
+            foreach (var rawPath in foldersToIgnore)
             {
                 if (Directory.Exists(rawPath))
                 {
@@ -19,7 +19,7 @@ namespace PlexCopier
         public bool IsIgnored(string source)
         {
             var fullPath = Path.GetFullPath(source);
-            foreach(var folder in foldersToIgnore)
+            foreach (var folder in foldersToIgnore)
             {
                 if (fullPath.StartsWith(folder))
                 {

@@ -64,12 +64,12 @@ namespace tst
 
         public Dictionary<int, SeriesInfo> SeriesInfos => this.seriesInfos;
 
-        public Task<SeriesInfo> GetSeriesInfo(int seriesId)
+        public Task<SeriesInfo> GetSeriesInfo(int seriesId, CancellationToken token)
         {
             return Task.FromResult(SeriesInfos[seriesId]);
         }
 
-        public Task Login()
+        public Task Login(CancellationToken token)
         {
             return Task.FromResult(true);
         }

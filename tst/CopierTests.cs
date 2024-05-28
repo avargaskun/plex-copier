@@ -31,7 +31,7 @@ namespace tst
             TestFiles.CreateFiles(TestArguments.DefaultTarget, TestFiles.SingleSeries, TestFiles.DoubleSeries, TestFiles.LongSeries);
 
             var copier = new Copier(arguments, client, options);
-            var matches = await copier.CopyFiles();
+            var matches = await copier.CopyFiles(CancellationToken.None);
 
             Assert.That(matches, Is.EqualTo(TestFiles.SingleSeries.Length + TestFiles.DoubleSeries.Length + TestFiles.LongSeries.Length));
 
@@ -52,7 +52,7 @@ namespace tst
             TestFiles.CreateFiles(TestArguments.DefaultTarget, TestFiles.SingleSeries);
 
             var copier = new Copier(arguments, client, options);
-            var matches = await copier.CopyFiles();
+            var matches = await copier.CopyFiles(CancellationToken.None);
 
             Assert.That(matches, Is.Zero);
 
@@ -72,7 +72,7 @@ namespace tst
             TestFiles.CreateFiles(TestArguments.DefaultTarget, TestFiles.SeriesWithSpecials);
 
             var copier = new Copier(arguments, client, options);
-            var matches = await copier.CopyFiles();
+            var matches = await copier.CopyFiles(CancellationToken.None);
 
             Assert.That(matches, Is.EqualTo(1));
 
@@ -115,7 +115,7 @@ namespace tst
             TestFiles.CreateFiles(TestArguments.DefaultTarget, TestFiles.SingleSeries);
 
             var copier = new Copier(arguments, client, options);
-            var matches = await copier.CopyFiles();
+            var matches = await copier.CopyFiles(CancellationToken.None);
 
             Assert.That(matches, Is.EqualTo(1));
 
@@ -142,7 +142,7 @@ namespace tst
             var initialContents = TestFiles.CreateFile(outputFile);
 
             var copier = new Copier(arguments, client, options);
-            var matches = await copier.CopyFiles();
+            var matches = await copier.CopyFiles(CancellationToken.None);
 
             Assert.That(matches, Is.EqualTo(TestFiles.SingleSeries.Length));
 

@@ -2,8 +2,8 @@ namespace PlexCopier
 {
     public interface ICopier
     {
-        Task<int> CopyFiles(string? source);
+        Task<int> CopyFiles(CancellationToken token);
 
-        IEnumerable<string> FindTargetFiles(string sourcePath);
+        Task<int> CopyFiles(string source, CancellationToken token);
     }
 }
