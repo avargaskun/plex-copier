@@ -6,8 +6,27 @@
 | `-o`, `--options` | The path to the [configuration file](#configuration-file). *Default:* `settings.yaml` |
 | `-r`, `--recursive` | Recursively traverse all subfolders when target is a directory. |
 | `-w`, `--watch` | Monitor for changes in the specified directory and apply the match rules to any newly created files. |
-| `-i`, `--ignore` | Does not attempt to match any files below a given path. This switch can be specified multiple times. **Only applies to watch mode.** |
 | `-n`, `--test` | Only print what copy operations would take place but do not actually copy any files. |
+| `-p`, `--parallel` | Specifies how many copy operations may happen in parallel. Set to 0 for unlimited.. *Default:* `1` |
+
+### Options that control file-copy operations
+
+> These apply either in single-use or watch mode
+
+| Option | Notes |
+| - | - |
+| `-v`, `--verify` | Verify the hash of the copied files against the source after copying. |
+| `-l`, `--lock` | When set, a lock will be acquired on the source files, to avoid any modifications while copying. |
+| `-b`, `--buffer` | The memory buffer size to use when performing File IO. Set to 0 to disable. *Default:* `4096` |
+| `--wt` | Indicates that the system should write through any intermediate cache and go directly to disk. |
+
+### Options that are exclusive to watch mode
+
+| Option | Notes |
+| - | - |
+| `-i`, `--ignore` | Does not attempt to match any files below a given path. This switch can be specified multiple times. |
+| `-d`, `--delay` | When watching a folder, specifies the time (in seconds) to wait after a file is observed, before beginning the copy operation. This is useful with large files to avoid reading while the files are being written by another process. *Default:* `30` |
+
 
 ### Example: Copy single file
 
