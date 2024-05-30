@@ -1,6 +1,6 @@
 namespace PlexCopier.Utils
 {
-    public class FileLock(string filePath) : IDisposable
+    public class FileLock(string filePath) : IFileLock
     {
         private static readonly log4net.ILog Log = log4net.LogManager.GetLogger(typeof(FileLock));
 

@@ -2,25 +2,12 @@ using PlexCopier.Settings;
 
 namespace PlexCopier.TvDb
 {
-    public class EpisodeMatch
+    public record EpisodeMatch(SeriesInfo Info, int Season, int Episode)
     {
-        public Series Series { get; set; }
+        public SeriesInfo Info { get; set; } = Info;
 
-        public Pattern Pattern { get; set; }
+        public int Season { get; set; } = Season;
 
-        public SeriesInfo Info { get; set; }
-
-        public int Season { get; set; }
-
-        public int Episode { get; set; }
-
-        public EpisodeMatch(Series series, Pattern pattern, SeriesInfo info, int season, int episode)
-        {
-            Series = series;
-            Pattern = pattern;
-            Info = info;
-            Season = season;
-            Episode = episode;
-        }
+        public int Episode { get; set; } = Episode;
     }
 }

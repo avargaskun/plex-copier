@@ -6,15 +6,11 @@ using PlexCopier.Utils;
 
 namespace PlexCopier
 {
-    public class Copier(Arguments arguments, ITvDbClient client, Options options) : ICopier
+    public class Copier(Arguments arguments, Options options) : ICopier
     {
         private static readonly log4net.ILog Log = log4net.LogManager.GetLogger(typeof(Copier));
 
         private static readonly string InvalidPathCharacters = @"<>:\\/""'!\|\?\*";
-
-        private readonly EpisodeFinder episodeFinder = new(options, client);
-
-        private readonly PathTraverser pathTraverser = new();
 
         private SemaphoreSlim copySemaphore = new 
         (
@@ -23,7 +19,13 @@ namespace PlexCopier
                 : int.MaxValue
         );
 
+        protected internal IEpisodeFinder EpisodeFinder { get; set; } = new EpisodeFinder(options);
+        
+        protected internal IPathTraverser PathTraverser { get; set; } = new PathTraverser();
+
         protected internal IFileManager FileManager { get; set; } = new FileManager(arguments);
+
+        protected internal Func<string, IFileLock> FileLockFactory { get; set; } = path => new FileLock(path);
 
         public Task<int> CopyFiles(CancellationToken token)
         {
@@ -33,7 +35,7 @@ namespace PlexCopier
         public async Task<int> CopyFiles(string source, CancellationToken token)
         {
             int matches = 0;
-            var foundFiles = pathTraverser.FindFilesInPath(source ?? arguments.Target, arguments.Recursive);
+            var foundFiles = PathTraverser.FindFilesInPath(source ?? arguments.Target, arguments.Recursive);
             var copyTasks = foundFiles.Select(file => CopySingleFile(file, token));
             // The cancellation token is not used here - that is on purpose
             // This should wait for any copy operation that is in flight
@@ -55,7 +57,7 @@ namespace PlexCopier
 
         private async Task<bool> CopySingleFile(string source, CancellationToken token)
         {
-            var match = await episodeFinder.FindForFile(source, token);
+            var match = await EpisodeFinder.FindForFile(source, token);
             if (match != null)
             {
                 await copySemaphore.WaitAsync(token);
@@ -93,30 +95,31 @@ namespace PlexCopier
                 return;
             }
 
-            using var fileLock = new FileLock(source);
-
-            if (arguments.LockFiles && !fileLock.Acquire())
+            using (var fileLock = FileLockFactory(source))
             {
-                Log.Warn($"Could not lock file, skipping: {target}");
-                return;
-            }
-
-            if (arguments.MoveFiles)
-            {
-                Log.Info($"Moving file: {source} -> {target}");
-                if (!arguments.Test)
+                if (arguments.LockFiles && !fileLock.Acquire())
                 {
-                    await FileManager.MoveAsync(source, target);
-                    Log.Info($"File moved to: {target}");
+                    Log.Warn($"Could not lock file, skipping: {target}");
+                    return;
                 }
-            }
-            else
-            {
-                Log.Info($"Copying file: {source} -> {target}");
-                if (!arguments.Test)
+
+                if (arguments.MoveFiles)
                 {
-                    await FileManager.CopyAsync(source, target);
-                    Log.Info($"File copied to: {target}");
+                    Log.Info($"Moving file: {source} -> {target}");
+                    if (!arguments.Test)
+                    {
+                        await FileManager.MoveAsync(source, target);
+                        Log.Info($"File moved to: {target}");
+                    }
+                }
+                else
+                {
+                    Log.Info($"Copying file: {source} -> {target}");
+                    if (!arguments.Test)
+                    {
+                        await FileManager.CopyAsync(source, target);
+                        Log.Info($"File copied to: {target}");
+                    }
                 }
             }
 

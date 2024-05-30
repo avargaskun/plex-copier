@@ -2,6 +2,7 @@ using System.Net.Http.Headers;
 
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using PlexCopier.Settings;
 
 namespace PlexCopier.TvDb
 {
@@ -15,29 +16,27 @@ namespace PlexCopier.TvDb
 
         private readonly string apikey;
 
-        private string userkey;
+        private readonly string userkey;
 
-        private string username;
+        private readonly string username;
 
         private string? token;
 
-        private readonly HttpClient client;
-
         private Dictionary<int, SeriesInfo> cache;
 
-        public TvDbClient(string apikey, string userkey, string username)
+        public TvDbClient(Options options)
         {
-            this.apikey = apikey;
-            this.userkey = userkey;
-            this.username = username;
-
-            client = new HttpClient(new RetryHandler(RetryCount, RetryInterval, IntervalMultiplier, new LoggingHandler()))
+            apikey = options.TvDb.ApiKey;
+            userkey = options.TvDb.UserKey;
+            username = options.TvDb.UserName;
+            cache = new Dictionary<int, SeriesInfo>();
+            Client = new HttpClient(new RetryHandler(RetryCount, RetryInterval, IntervalMultiplier, new LoggingHandler()))
             {
                 BaseAddress = new Uri("https://api.thetvdb.com")
             };
-
-            cache = new Dictionary<int, SeriesInfo>();
         }
+
+        protected internal HttpClient Client { get; set; }
 
         public async Task Login(CancellationToken ct)
         {
@@ -141,7 +140,7 @@ namespace PlexCopier.TvDb
                     request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
                 }
                 
-                using (var response = await client.SendAsync(request, ct))
+                using (var response = await Client.SendAsync(request, ct))
                 {
                     response.EnsureSuccessStatusCode();
                     if (response.Content == null || response.Content.Headers.ContentLength.GetValueOrDefault(0) == 0)

@@ -3,7 +3,7 @@ using System.Text;
 
 namespace PlexCopier.Utils
 {
-    public class FileCompare()
+    public class FileCompare : IFileCompare
     {
         private const int ReadBuffer = 65536; // 64KB
 
@@ -14,7 +14,7 @@ namespace PlexCopier.Utils
             return string.CompareOrdinal(hashes[0], hashes[1]) == 0;
         }
 
-        private async Task<string> ComputeHash(string filePath)
+        private static async Task<string> ComputeHash(string filePath)
         {
             byte[] hashBytes;
             using (var stream = OpenSource(filePath))
@@ -30,7 +30,7 @@ namespace PlexCopier.Utils
             return sb.ToString();
         }
 
-        private FileStream OpenSource(string source)
+        private static FileStream OpenSource(string source)
         {
             return new FileStream(
                 source, 

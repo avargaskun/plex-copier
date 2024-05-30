@@ -1,11 +1,12 @@
 using PlexCopier.Settings;
-using PlexCopier.TvDb;
 
-namespace PlexCopier.Utils
+namespace PlexCopier.TvDb
 {
-    public class EpisodeFinder(Options options, ITvDbClient client)
+    public class EpisodeFinder(Options options) : IEpisodeFinder
     {
         private static readonly log4net.ILog Log = log4net.LogManager.GetLogger(typeof(EpisodeFinder));
+
+        protected internal ITvDbClient Client { get; set; } = new TvDbClient(options);
 
         public async Task<EpisodeMatch?> FindForFile(string file, CancellationToken token)
         {
@@ -16,14 +17,14 @@ namespace PlexCopier.Utils
                     var match = pattern.Regex.Match(Path.GetFileNameWithoutExtension(file));
                     if (match.Success)
                     {
-                        var seriesInfo = await client.GetSeriesInfo(series.Id, token);
+                        var seriesInfo = await Client.GetSeriesInfo(series.Id, token);
                         var season = pattern.SeasonStart.GetValueOrDefault(1);
                         var episode = match.Groups.Count > 1 ? int.Parse(match.Groups[1].Value) : 1;
                         episode += pattern.EpisodeOffset.GetValueOrDefault(0);
-                        while 
+                        while
                         (
-                            season < seriesInfo.Seasons.Length && 
-                            episode > seriesInfo.Seasons[season].EpisodeCount && 
+                            season < seriesInfo.Seasons.Length &&
+                            episode > seriesInfo.Seasons[season].EpisodeCount &&
                             seriesInfo.Seasons.Length > season + 1
                         )
                         {
@@ -37,8 +38,8 @@ namespace PlexCopier.Utils
                             return null;
                         }
 
-                        return new EpisodeMatch(series, pattern, seriesInfo, season, episode);
-                    }                
+                        return new EpisodeMatch(seriesInfo, season, episode);
+                    }
                 }
             }
 

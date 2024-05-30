@@ -1,6 +1,6 @@
 namespace PlexCopier.Utils
 {
-    public class PathTraverser
+    public class PathTraverser : IPathTraverser
     {
         public IEnumerable<string> FindFilesInPath(string source, bool recursive)
         {

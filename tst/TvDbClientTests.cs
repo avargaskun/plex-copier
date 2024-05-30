@@ -1,4 +1,6 @@
 using NUnit.Framework;
+using NUnit.Framework.Internal;
+using PlexCopier.Settings;
 using PlexCopier.TvDb;
 
 namespace tst
@@ -6,22 +8,34 @@ namespace tst
     [TestFixture]
     public class TvDbClientTests
     {
-        private readonly string apiKey = 
+        private readonly string ApiKey = 
             Environment.GetEnvironmentVariable("TVDB_API_KEY") 
             ?? throw new Exception("Missing value for environment variable TVDB_API_KEY");
 
-        private readonly string userKey =
+        private readonly string UserKey =
             Environment.GetEnvironmentVariable("TVDB_USER_KEY") 
             ?? throw new Exception("Missing value for environment variable TVDB_USER_KEY");
 
-        private readonly string userName =
+        private readonly string UserName =
             Environment.GetEnvironmentVariable("TVDB_USER_NAME") 
             ?? throw new Exception("Missing value for environment variable TVDB_USER_NAME");
 
         [Test]
         public async Task RetrieveSeriesWithMultipleSeasons()
         {
-            var client = new TvDbClient(apiKey, userKey, userName);
+            var options = new Options
+            {
+                Collection = TestOptions.Default.Collection,
+                Series = TestOptions.Default.Series,
+                TvDb = new TvDb 
+                { 
+                    ApiKey = ApiKey, 
+                    UserKey = UserKey, 
+                    UserName = UserName 
+                }
+            };
+
+            var client = new TvDbClient(options);
             await client.Login(CancellationToken.None);
 
             var series = await client.GetSeriesInfo(79035, CancellationToken.None);
