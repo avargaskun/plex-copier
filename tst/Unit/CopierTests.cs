@@ -1,5 +1,4 @@
 using NSubstitute;
-using NSubstitute.ExceptionExtensions;
 using NSubstitute.Extensions;
 using NUnit.Framework;
 using PlexCopier;
@@ -7,7 +6,7 @@ using PlexCopier.Settings;
 using PlexCopier.TvDb;
 using PlexCopier.Utils;
 
-namespace tst
+namespace tst.Unit
 {
     public class CopierTests
     {

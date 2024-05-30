@@ -5,7 +5,7 @@ using NSubstitute.Extensions;
 using NUnit.Framework;
 using PlexCopier.TvDb;
 
-namespace tst
+namespace tst.Unit
 {
     public class RetryHandlerTests
     {

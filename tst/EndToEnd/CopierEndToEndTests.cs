@@ -2,7 +2,7 @@ using NUnit.Framework;
 using PlexCopier;
 using PlexCopier.TvDb;
 
-namespace tst
+namespace tst.EndToEnd
 {
 
     [TestFixture]

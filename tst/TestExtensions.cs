@@ -1,4 +1,5 @@
 using System.Reflection;
+using NSubstitute.Extensions;
 
 public static class TestExtensions
 {
@@ -13,6 +14,6 @@ public static class TestExtensions
             throw new Exception("Must be a virtual member");
         }
 
-        return method.Invoke(substitute, args);
+        return method.Invoke(substitute.Configure(), args);
     }
 }

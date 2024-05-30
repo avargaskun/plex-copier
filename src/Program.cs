@@ -25,12 +25,7 @@ namespace PlexCopier
                         ?? throw new FatalException($"File {Options.DefaultFilename} could not be found.");
                     using var options = Options.Load(optionsFile);
                     
-                    var client = new TvDbClient(options);
-                    client.Login(CancellationToken.None).Wait();
-
-                    var epFinder = new EpisodeFinder(options) { Client = client };
-                    var copier = new Copier(arguments, options) { EpisodeFinder = epFinder };
-
+                    var copier = new Copier(arguments, options);
                     if (arguments.Watch)
                     {
                         options.WatchForChanges(optionsFile);

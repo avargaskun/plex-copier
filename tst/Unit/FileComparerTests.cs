@@ -1,7 +1,7 @@
 using NUnit.Framework;
 using PlexCopier.Utils;
 
-namespace tst
+namespace tst.Unit
 {
     public class FileComparerTests
     {

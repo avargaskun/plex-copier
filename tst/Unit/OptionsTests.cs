@@ -1,7 +1,7 @@
 using NUnit.Framework;
 using PlexCopier.Settings;
 
-namespace tst
+namespace tst.Unit
 {
     public class OptionsTests
     {

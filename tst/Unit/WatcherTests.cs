@@ -4,7 +4,7 @@ using NUnit.Framework;
 using PlexCopier;
 using PlexCopier.Settings;
 
-namespace tst
+namespace tst.Unit
 {
     [TestFixture]
     public class WatcherTests

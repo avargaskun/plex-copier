@@ -3,7 +3,7 @@ using NUnit.Framework.Internal;
 using PlexCopier.Settings;
 using PlexCopier.TvDb;
 
-namespace tst
+namespace tst.Integration
 {
     [TestFixture]
     public class TvDbClientTests
@@ -36,8 +36,6 @@ namespace tst
             };
 
             var client = new TvDbClient(options);
-            await client.Login(CancellationToken.None);
-
             var series = await client.GetSeriesInfo(79035, CancellationToken.None);
 
             Assert.That(series.Name, Is.EqualTo("Mahoromatic: Automatic Maiden"));

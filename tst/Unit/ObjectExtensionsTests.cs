@@ -2,7 +2,7 @@ using System.Text.Json;
 using NUnit.Framework;
 using PlexCopier.Utils;
 
-namespace tst
+namespace tst.Unit
 {
     public class ObjectExtensionsTests
     {

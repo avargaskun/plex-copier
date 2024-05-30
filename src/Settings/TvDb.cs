@@ -7,5 +7,7 @@ namespace PlexCopier.Settings
         public required string UserKey { get; set; }
 
         public required string UserName { get; set; }
+
+        public int TokenExpirationHours { get; set; } = 6;
     }
 }
